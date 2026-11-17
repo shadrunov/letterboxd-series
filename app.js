@@ -159,8 +159,6 @@ async function init() {
     $('#total-series').textContent = new Set(state.entries.map(entry => entry.showId)).size;
     $('#total-viewings').textContent = state.entries.length;
     $('#total-rewatches').textContent = state.entries.filter(entry => entry.watch === 'rewatch').length;
-    $('#diary-count').textContent = state.entries.length;
-    $('#watched-count').textContent = new Set(state.entries.filter(entry => entry.status === 'watched').map(entry => entry.showId)).size;
     const firstYear = state.entries.map(entry => entry.watched.slice(0,4)).sort()[0];
     $('.profile span:last-child').textContent = firstYear ? `Since ${firstYear}` : 'A viewing diary';
     const latest = [...state.entries].sort((a,b) => b.watched.localeCompare(a.watched))[0];
