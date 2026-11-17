@@ -52,7 +52,7 @@ For a complete rewatch, use `all` and `rewatch`. For selected seasons, use `1, 3
 
 #### One-time TMDB setup
 
-1. Get your **API Read Access Token** from [TMDB account → API](https://www.themoviedb.org/settings/api). Use the long read access token, not the shorter v3 API key.
+1. Get your **API Read Access Token** from [TMDB account → API](https://www.themoviedb.org/settings/api). The long read access token is recommended; the shorter v3 API key also works.
 2. Open [this repository’s Actions secrets](https://github.com/shadrunov/letterboxd-series/settings/secrets/actions) and add **TMDB_READ_ACCESS_TOKEN** as a repository secret. Never put it in a file or diary row.
 3. Add a TMDB link to a year table and commit. The existing Pages workflow handles import, validation, build, and deployment automatically.
 
@@ -69,7 +69,7 @@ python3 scripts/import_tmdb.py
 python3 scripts/build.py
 ```
 
-The importer asks for your read token with a hidden prompt if uncached links need fetching. It also accepts the `TMDB_READ_ACCESS_TOKEN` environment variable for automation. Files are saved under the ignored `.cache/tmdb/` directory. Use `python3 scripts/import_tmdb.py --refresh` to update cached metadata.
+The importer asks for your read token with a hidden prompt if uncached links need fetching. It also accepts the `TMDB_READ_ACCESS_TOKEN` environment variable for automation. Both read tokens and v3 API keys are accepted in this variable or repository secret. Files are saved under the ignored `.cache/tmdb/` directory. Use `python3 scripts/import_tmdb.py --refresh` to update cached metadata.
 
 The import fails clearly for an invalid link, missing token, missing title, or failed API request; it does not publish placeholder information for a TMDB entry. Existing plain-title entries and previously imported cached titles do not need credentials to build.
 

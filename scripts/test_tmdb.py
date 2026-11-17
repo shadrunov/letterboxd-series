@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 from build import parse_year, load_diary
-from import_tmdb import discover_references, fetch_metadata, import_titles
+from import_tmdb import discover_references, fetch_metadata, import_titles, request_bytes
 from test_diary import HEADER
 from tmdb import parse_reference
 
@@ -28,6 +28,21 @@ class TMDBTest(unittest.TestCase):
                     'https://www.themoviedb.org/tv/1/season/2', 'https://www.themoviedb.org/tv/0']:
             with self.subTest(url=url), self.assertRaises(ValueError):
                 parse_reference(url)
+
+    def test_read_token_and_v3_api_key_authentication(self):
+        from unittest.mock import MagicMock
+        for secret, expected_query in [('fixture-read-token', False), ('a' * 32, True), ('Bearer fixture-read-token', False)]:
+            response = MagicMock()
+            response.__enter__.return_value.read.return_value = b'{}'
+            with patch('import_tmdb.urlopen', return_value=response) as open_url:
+                request_bytes('https://api.themoviedb.org/3/tv/100088?language=en-US', secret)
+            request = open_url.call_args.args[0]
+            if expected_query:
+                self.assertIn('api_key=', request.full_url)
+                self.assertIsNone(request.get_header('Authorization'))
+            else:
+                self.assertNotIn('api_key=', request.full_url)
+                self.assertEqual(request.get_header('Authorization'), 'Bearer fixture-read-token')
 
     def test_discovery_fetches_each_title_once(self):
         with tempfile.TemporaryDirectory() as directory:

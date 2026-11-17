@@ -10,6 +10,7 @@ import tempfile
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+from urllib.parse import urlencode
 
 from build import ROOT, table_rows
 from tmdb import parse_reference, reference_url
@@ -38,7 +39,14 @@ def read_cache(cache):
 def request_bytes(url, token=None):
     headers = {'Accept': 'application/json' if token else 'image/*', 'User-Agent': 'SeriesDiary/1.0'}
     if token:
-        headers['Authorization'] = f'Bearer {token}'
+        token = token.strip()
+        if token.lower().startswith('bearer '):
+            token = token[7:].strip()
+        if re.fullmatch(r'[0-9a-fA-F]{32}', token):
+            # v3 API keys use a query parameter; never log this URL.
+            url += ('&' if '?' in url else '?') + urlencode({'api_key': token})
+        else:
+            headers['Authorization'] = f'Bearer {token}'
     for attempt in range(3):
         try:
             with urlopen(Request(url, headers=headers), timeout=30) as response:
