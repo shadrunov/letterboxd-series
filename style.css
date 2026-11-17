@@ -14,8 +14,6 @@ main,.header-inner { max-width:1180px; margin:auto; padding:0 36px; }
 .header-inner { height:72px; display:flex; align-items:center; gap:40px; }
 .wordmark { font-size:29px; font-weight:800; letter-spacing:-1.5px; display:flex; align-items:center; gap:12px; color:#f0f3f5; }
 .header-note { font-size:10px; letter-spacing:2px; color:#6f8191; }
-.github-link { margin-left:0; color:#9cabb8; font-size:12px; }
-.github-link span { margin-left:9px; color:#607080; }
 .intro { display:flex; align-items:center; justify-content:space-between; gap:25px; padding:35px 0 30px; }
 .eyebrow { font-size:9px; letter-spacing:1.6px; color:#9baab7; font-weight:600; margin:0 0 12px; }
 .live-dot { display:inline-block; height:6px; width:6px; background:var(--green); border-radius:50%; margin:0 7px 1px 0; }
@@ -277,7 +275,6 @@ dialog::backdrop { background:#080d12d9; backdrop-filter:blur(5px); }
 @media(max-width:600px) {
   .header-inner { height:auto; min-height:72px; flex-wrap:wrap; gap:0; padding-top:16px; }
   .header-inner .wordmark { order:0; }
-  .header-inner .github-link { order:1; margin-left:auto; }
   .header-inner .section-switch { order:2; flex-basis:100%; height:48px; margin:12px 0 0; gap:28px; }
 }
 
@@ -377,7 +374,6 @@ dialog { max-height:calc(100vh - 32px); max-height:calc(100dvh - 32px); overflow
 .collection-nav .sort-wrap { gap:7px; }
 @media(max-width:600px) {
   .header-inner { gap:0; }
-  .header-inner .github-link { display:none; }
   .header-inner .header-search { order:1; margin-left:auto; flex-basis:128px; width:128px; }
   .header-inner .section-switch { order:2; }
 }
