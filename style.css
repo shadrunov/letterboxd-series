@@ -28,7 +28,7 @@ h1 { font:400 39px/1.15 Georgia,'Times New Roman',serif; letter-spacing:-1.4px; 
 .lede { color:#9aa9b6; font-size:13px; line-height:1.7; margin:0; }
 .profile { display:flex; align-items:center; gap:9px; font-size:10px; color:#8796a4; margin-top:18px; }
 .profile strong { color:#bcc9d2; font-weight:500; }
-.avatar { border:1px solid #63596b; border-radius:50%; width:24px; height:24px; text-align:center; line-height:21px; font:18px Georgia,serif; background:#3d3449; color:#e0d4e9; }
+.avatar { display:block; width:24px; height:24px; object-fit:cover; border:1px solid #56616b; border-radius:50%; }
 .profile-divider { margin:0 4px; color:#45515d; }
 .edit-diary { font-size:11px; padding:9px 13px; border:1px solid #3c4c58; border-radius:4px; color:#a9bac6; white-space:nowrap; }
 .edit-diary:hover { color:var(--text); border-color:#728d9f; }
