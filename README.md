@@ -129,3 +129,5 @@ node scripts/test_app.mjs
 ## Credits
 
 An independent personal site, unaffiliated with Letterboxd. Metadata and artwork: [TMDB](https://www.themoviedb.org/). This product uses the TMDB API but is not endorsed or certified by TMDB. The approved TMDB logo comes from its official developer documentation. Artwork belongs to its respective rights holders.
+
+Typography uses self-hosted [Inter](https://github.com/rsms/inter) and [Source Serif 4](https://github.com/adobe-fonts/source-serif), under the SIL Open Font License. License files are included in `assets/fonts/`.

@@ -6,7 +6,7 @@ const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'
 const seasonLabel = entry => entry.mediaType === 'movie' ? 'Film' : entry.allSeasons ? 'All seasons' : entry.seasons.map(n => `S${n}`).join(' · ');
 const watchLabel = entry => entry.watched.length === 4 ? `${entry.watched} · month not recorded` : `${months[Number(entry.watched.slice(5)) - 1]} ${entry.watched.slice(0, 4)}`;
 const editURL = entry => entry.editUrl || `https://github.com/shadrunov/letterboxd-series/edit/main/diary/${entry.watched.slice(0,4)}.yaml`;
-const editLink = entry => `<a class="edit-entry" href="${escapeHTML(editURL(entry))}" target="_blank" rel="noopener noreferrer" aria-label="Edit ${escapeHTML(entry.title)} viewing on GitHub" title="Edit on GitHub">✎</a>`;
+const editLink = entry => `<a class="edit-entry" href="${escapeHTML(editURL(entry))}" target="_blank" rel="noopener noreferrer" aria-label="Edit ${escapeHTML(entry.title)} viewing on GitHub" title="Edit on GitHub"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="m11.6 1.1 3.3 3.3-9.7 9.7L1 15l.9-4.2zm-8.4 10L2.7 13.3l2.2-.5 8-8-1.7-1.7z"/></svg></a>`;
 const tagsHTML = entry => entry.tags.map(tag => `<button class="tag" type="button" data-tag="${escapeHTML(tag)}" aria-pressed="${state.tags.has(tag)}">${escapeHTML(tag)}</button>`).join('');
 function posterHTML(entry) {
   return entry.poster ? `<img src="${escapeHTML(entry.poster)}" alt="" loading="lazy" width="200" height="300">` : '<span class="poster-placeholder" aria-hidden="true">tv</span>';
