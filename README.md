@@ -4,7 +4,7 @@
 
 ## Browse
 
-- **Diary:** every viewing, including rewatches and unfinished entries, grouped by year. Choose **Large cards** (five per desktop row), **Small cards** (eight), or **List**. The list has month/year calendars, titles, release years, seasons, rewatch markers, and GitHub edit links. It has no day, rating, or review column.
+- **Diary:** every viewing, including rewatches and unfinished entries, grouped by year. Choose **Large cards** (five per desktop row), **Small cards** (eight), or **List**. The list has year-only calendars, a separate month column, titles, release years, seasons, rewatch markers, and GitHub edit links. Compact text dropdowns sit directly above the entries. It has no day, rating, or review column.
 - **Watched:** one card per series with a completed viewing, across all years. Rewatches are combined, watched seasons and tags are collected, and the latest watch month is shown. Choose large or small cards. Unfinished-only series remain in the diary.
 
 Open a poster or title for its synopsis, complete viewing history, TMDB page, and a verified Letterboxd page when available. Below the details, a seasons list shows release years, episode counts, optional synopses, and links to individual seasons; specials appear last. Unknown dates and episode counts are marked explicitly. Search, tags, year, watch type, layout, and section are shareable in the URL.

@@ -313,3 +313,47 @@ dialog { max-height:calc(100vh - 32px); max-height:calc(100dvh - 32px); overflow
 }
 
 .detail-poster .poster-placeholder { height:auto; aspect-ratio:2/3; }
+
+/* Compact filter strip directly above the collection, like Letterboxd. */
+.collection-search-tools { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px 24px; margin-bottom:20px; }
+.collection-search-tools .tag-toolbar { padding:0; }
+.collection-search-tools .search-wrap { margin:0; }
+.collection-nav { align-items:baseline; gap:14px; flex-wrap:wrap; padding-bottom:9px; }
+.collection-nav .toolbar { margin-left:auto; padding:0; align-items:baseline; justify-content:flex-end; gap:16px; }
+.collection-nav .filters { align-items:baseline; flex-wrap:wrap; gap:15px; }
+.collection-nav .select-wrap { position:relative; display:inline-flex; align-items:baseline; gap:5px; }
+.collection-nav .select-wrap::after { content:''; position:absolute; right:3px; top:9px; width:6px; height:6px; border-right:2px solid #617c90; border-bottom:2px solid #617c90; transform:rotate(45deg); pointer-events:none; }
+.collection-nav .select-wrap select { appearance:none; -webkit-appearance:none; background:transparent; border:0; border-radius:0; color:#91a5b6; font-size:11px; letter-spacing:.7px; text-transform:uppercase; padding:3px 19px 3px 0; max-width:170px; }
+.collection-nav .select-wrap select:hover { color:#eef4f7; }
+.collection-nav .select-wrap option { background:#899cac; color:#243440; font-size:12px; }
+.sort-prefix { color:#778e9f; font-size:11px; white-space:nowrap; }
+.collection-nav .view-switch { border-left:1px solid #334450; padding-left:15px; gap:12px; }
+.view-list .diary-table th { border-top:0; }
+.diary-table th:first-child { width:90px; }
+.diary-table th:nth-child(2) { width:75px; text-align:left; }
+.diary-table th:nth-child(3) { width:auto; text-align:left; }
+.diary-table th:nth-child(4) { width:80px; text-align:center; }
+.diary-table th:nth-child(5) { width:120px; text-align:left; }
+.diary-table th:nth-child(6) { width:75px; text-align:center; }
+.diary-table th:last-child { width:55px; }
+.diary-table .month-cell { font-size:20px; font-weight:400; color:#91a8ba; text-transform:uppercase; }
+.calendar-year { min-height:57px; }
+.calendar-year strong { font-size:21px; letter-spacing:.3px; }
+@media(max-width:800px) {
+  .collection-nav .toolbar { flex-direction:row; flex-wrap:wrap; }
+  .collection-nav .view-switch { gap:10px; }
+  .diary-table { min-width:690px; }
+  .diary-table th:first-child { width:75px; }
+  .diary-table th:nth-child(2) { width:65px; }
+  .diary-table th:nth-child(4) { width:75px; }
+  .diary-table th:nth-child(5) { width:90px; }
+  .diary-table th:nth-child(6) { width:65px; }
+  .diary-table th:last-child { width:45px; }
+}
+@media(max-width:600px) {
+  .collection-nav { gap:10px; }
+  .collection-nav .toolbar { width:100%; margin:0; justify-content:flex-start; gap:12px 15px; }
+  .collection-nav .filters { gap:15px; }
+  .collection-nav .view-switch { margin-left:auto; }
+  .collection-search-tools { margin-bottom:16px; }
+}

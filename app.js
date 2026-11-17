@@ -21,14 +21,15 @@ function cardHTML(entry, aggregate = false) {
     </div><div class="viewing-when"><span>${escapeHTML(watchLabel(entry))}</span>${aggregate ? `<span class="viewing-count">${entry.viewingCount} ${entry.viewingCount === 1 ? 'viewing' : 'viewings'}</span>` : `<span class="watch-status">${entry.status === 'unfinished' ? 'Ⅱ Unfinished' : '✓ Watched'}</span>${editLink(entry)}`}</div>
   </article>`;
 }
-function diaryTable(entries) {
-  let previousMonth = null;
-  return `<div class="diary-table-wrap"><table class="diary-table"><thead><tr><th scope="col">Month</th><th scope="col">Series</th><th scope="col">Released</th><th scope="col">Seasons</th><th scope="col">Rewatch</th><th scope="col">Edit</th></tr></thead><tbody>${entries.map(entry => {
-    const showMonth = previousMonth !== entry.watched;
-    previousMonth = entry.watched;
-    const month = entry.watched.length === 4 ? '?' : months[Number(entry.watched.slice(5)) - 1];
-    return `<tr><td class="month-cell">${showMonth ? `<div class="calendar-month"><strong>${month}</strong><span>${entry.watched.slice(0,4)}</span></div>` : `<span class="sr-only">${escapeHTML(watchLabel(entry))}</span>`}</td><td class="series-cell"><div class="diary-series"><button class="viewing-poster" type="button" data-id="${entry.id}" aria-label="Details for ${escapeHTML(entry.title)}">${posterHTML(entry)}</button><div><button class="card-title" type="button" data-id="${entry.id}">${escapeHTML(entry.title)}</button><div class="entry-tags">${tagsHTML(entry)}</div></div></div></td><td class="released-cell">${entry.year || '—'}</td><td class="seasons-cell">${seasonLabel(entry)}${entry.status === 'unfinished' ? '<span class="unfinished-text">Unfinished</span>' : ''}</td><td class="rewatch-cell">${entry.watch === 'rewatch' ? '<span class="rewatch-icon" aria-label="Rewatch" title="Rewatch">↻</span>' : '<span class="sr-only">Regular watch</span>'}</td><td class="edit-cell">${editLink(entry)}</td></tr>`;
-  }).join('')}</tbody></table></div>`;
+function diaryTable(groups) {
+  return `<div class="diary-table-wrap"><table class="diary-table"><thead><tr><th scope="col">Year</th><th scope="col">Month</th><th scope="col">Series</th><th scope="col">Released</th><th scope="col">Seasons</th><th scope="col">Rewatch</th><th scope="col">Edit</th></tr></thead>${groups.map(({year, entries}) => {
+    const calendar = `<div class="calendar-month calendar-year"><strong>${year}</strong></div>`;
+    const rows = entries.map((entry,index) => {
+      const month = entry.watched.length === 4 ? '<span aria-label="Month not recorded">—</span>' : months[Number(entry.watched.slice(5)) - 1];
+      return `<tr><td class="year-cell">${index === 0 ? calendar : `<span class="sr-only">${year}</span>`}</td><td class="month-cell">${month}</td><td class="series-cell"><div class="diary-series"><button class="viewing-poster" type="button" data-id="${entry.id}" aria-label="Details for ${escapeHTML(entry.title)}">${posterHTML(entry)}</button><div><button class="card-title" type="button" data-id="${entry.id}">${escapeHTML(entry.title)}</button><div class="entry-tags">${tagsHTML(entry)}</div></div></div></td><td class="released-cell">${entry.year || '—'}</td><td class="seasons-cell">${seasonLabel(entry)}${entry.status === 'unfinished' ? '<span class="unfinished-text">Unfinished</span>' : ''}</td><td class="rewatch-cell">${entry.watch === 'rewatch' ? '<span class="rewatch-icon" aria-label="Rewatch" title="Rewatch">↻</span>' : '<span class="sr-only">Regular watch</span>'}</td><td class="edit-cell">${editLink(entry)}</td></tr>`;
+    }).join('');
+    return `<tbody id="heading-${year}" aria-label="${year}">${rows || `<tr><td class="year-cell">${calendar}</td><td colspan="6" class="empty-year">No viewings recorded yet.</td></tr>`}</tbody>`;
+  }).join('')}</table></div>`;
 }
 function matchingEntries() {
   const query = $('#search').value.trim().toLocaleLowerCase();
@@ -83,10 +84,9 @@ function render() {
     $('#results-label').textContent = `${shows.length} series watched · One card per series`;
   } else {
     $('#entries').className = `year-groups view-${state.view}`;
-    $('#entries').innerHTML = state.years.filter(year => $('#year').value === 'all' || year === $('#year').value).map(year => {
-      const group = sortEntries(entries.filter(entry => entry.watched.startsWith(year)));
-      if (!group.length && hasFilters) return '';
-      return `<section class="year-group" aria-labelledby="heading-${year}"><div class="year-heading"><div><h3 id="heading-${year}">${year}</h3><span>${group.length} ${group.length === 1 ? 'viewing' : 'viewings'}</span></div><a href="https://github.com/shadrunov/letterboxd-series/edit/main/diary/${year}.md" target="_blank" rel="noopener noreferrer">Edit year ↗</a></div>${group.length ? state.view === 'list' ? diaryTable(group) : `<div class="year-entries">${group.map(entry => cardHTML(entry)).join('')}</div>` : '<p class="empty-year">No viewings recorded yet.</p>'}</section>`;
+    const groups = state.years.filter(year => $('#year').value === 'all' || year === $('#year').value).map(year => ({year, entries:sortEntries(entries.filter(entry => entry.watched.startsWith(year)))})).filter(group => group.entries.length || !hasFilters);
+    $('#entries').innerHTML = state.view === 'list' ? (groups.length ? diaryTable(groups) : '') : groups.map(({year, entries:group}) => {
+      return `<section class="year-group" aria-labelledby="heading-${year}"><div class="year-heading"><div><h3 id="heading-${year}">${year}</h3><span>${group.length} ${group.length === 1 ? 'viewing' : 'viewings'}</span></div><a href="https://github.com/shadrunov/letterboxd-series/edit/main/diary/${year}.md" target="_blank" rel="noopener noreferrer">Edit year ↗</a></div>${group.length ? `<div class="year-entries">${group.map(entry => cardHTML(entry)).join('')}</div>` : '<p class="empty-year">No viewings recorded yet.</p>'}</section>`;
     }).join('');
     $('#results-label').textContent = `${entries.length} ${entries.length === 1 ? 'viewing' : 'viewings'} · ${new Set(entries.map(entry => entry.showId)).size} series${state.tags.size > 1 ? ' · Matching all selected tags' : ''}`;
   }
