@@ -158,6 +158,9 @@ document.querySelectorAll('[data-view]').forEach(button => button.addEventListen
 $('#reset').addEventListener('click',() => { $('#search').value = ''; ['year','status','watch'].forEach(key => $(`#${key}`).value = 'all'); state.tags.clear(); render(); });
 $('.close-dialog').addEventListener('click',() => $('#detail').close());
 $('#detail').addEventListener('click',event => { if (event.target === $('#detail')) { const r = $('#detail').getBoundingClientRect(); if (event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom) $('#detail').close(); } });
+function countThisYear(entries, year) {
+  return entries.filter(entry => entry.watched.slice(0,4) === String(year)).length;
+}
 async function init() {
   try {
     const embedded = $('#diary-data');
@@ -175,8 +178,9 @@ async function init() {
     $('#total-series').textContent = new Set(state.entries.map(entry => entry.showId)).size;
     $('#total-viewings').textContent = state.entries.length;
     $('#total-rewatches').textContent = state.entries.filter(entry => entry.watch === 'rewatch').length;
-    const firstYear = state.entries.map(entry => entry.watched.slice(0,4)).sort()[0];
-    $('.profile span:last-child').textContent = firstYear ? `Since ${firstYear}` : 'A viewing diary';
+    const year = new Date().getFullYear();
+    $('#total-this-year').textContent = countThisYear(state.entries, year);
+    $('#this-year-stat').title = `Diary entries logged in ${year}`;
     const latest = [...state.entries].sort((a,b) => b.watched.localeCompare(a.watched))[0];
     if (latest) $('#latest-title').innerHTML = `${escapeHTML(latest.title)} <small>${escapeHTML(watchLabel(latest))}</small>`;
     const params = new URLSearchParams(location.search);
