@@ -407,11 +407,11 @@ dialog { max-height:calc(100vh - 32px); max-height:calc(100dvh - 32px); overflow
 .profile-header .stats { gap:0; }
 .profile-stat { display:flex; flex-direction:column; align-items:center; }
 .profile-header .profile-stat:hover strong,.profile-header .profile-stat:hover span { color:#fff; }
-.profile-header .stats>div { min-width:86px; padding:0 16px; text-align:center; border-left:1px solid #2d3c47; }
+.profile-header .stats>div { min-width:68px; height:48px; justify-content:center; padding:0 12px; text-align:center; border-left:1px solid #2d3c47; }
 .profile-header .stats>div:first-child { border-left:0; padding-left:0; }
 .profile-header .stats>div:last-child { padding-right:0; }
-.profile-header .stats strong { font:700 42px/1 Georgia,'Times New Roman',serif; letter-spacing:-1px; color:#d8e0e6; }
-.profile-header .stats span { font-size:12px; line-height:1.4; letter-spacing:1px; margin-top:9px; color:#789; }
+.profile-header .stats strong { font:700 28px/1 Georgia,'Times New Roman',serif; letter-spacing:-.6px; color:#d8e0e6; }
+.profile-header .stats span { font-size:10px; line-height:1.4; letter-spacing:.7px; margin-top:5px; color:#789; }
 .profile-header .latest { display:flex; max-width:none; }
 /* Tighter year/month/poster spacing in the diary. */
 .diary-table th:first-child { width:74px; }
