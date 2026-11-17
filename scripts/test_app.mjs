@@ -8,7 +8,12 @@ const fixture = {
   years: ['2024', '2025', '2026'],
   entries: [
     { id: 'one', showId: 'royals', title: 'Young Royals', watched: '2025-10', seasons: [1, 2, 3], watch: 'watch', status: 'watched', tags: ['queer'], notes: '' },
-    { id: 'two', showId: 'royals', title: 'Young Royals', watched: '2026-01', seasons: [2, 3], watch: 'rewatch', status: 'watched', tags: ['queer', 'w/ alena ❤️'], notes: 'A repeat.', url:'https://www.themoviedb.org/tv/125910', letterboxd:'https://letterboxd.com/film/fixture/' },
+    { id: 'two', showId: 'royals', title: 'Young Royals', watched: '2026-01', seasons: [2, 3], watch: 'rewatch', status: 'watched', tags: ['queer', 'w/ alena ❤️'], notes: 'A repeat.', url:'https://www.themoviedb.org/tv/125910', letterboxd:'https://letterboxd.com/film/fixture/', mediaType:'tv', numberOfSeasons:3, numberOfEpisodes:18, showStatus:'Ended', seasonDetails:[
+      {number:0,name:'Specials',airDate:null,episodeCount:1},
+      {number:3,name:'Season 3',airDate:'2024-03-11',episodeCount:6,overview:'The final season.'},
+      {number:1,name:'Season 1',airDate:'2021-07-01',episodeCount:6},
+      {number:4,name:'Season 4',airDate:null,episodeCount:null},
+    ] },
     { id: 'three', showId: 'royals', title: 'Young Royals', watched: '2026-01', seasons: [], allSeasons: true, watch: 'rewatch', status: 'unfinished', tags: ['queer'], notes: '' },
     { id: 'four', showId: 'new', title: 'A <New> Series', watched: '2026', seasons: [1], watch: 'watch', status: 'watched', tags: ['deutsch'], notes: '<b>personal</b>' },
   ],
@@ -67,6 +72,15 @@ assert.ok(get('#detail-content').innerHTML.includes('All seasons'));
 assert.ok(get('#detail-content').innerHTML.includes('TMDB ↗'));
 assert.ok(get('#detail-content').innerHTML.includes('Letterboxd ↗'));
 assert.ok(!get('#detail-content').innerHTML.includes('TVmaze'));
+const detailsHTML = get('#detail-content').innerHTML;
+assert.ok(detailsHTML.includes('3 seasons · 18 episodes · Ended'));
+assert.ok(detailsHTML.includes('2024 · 6 episodes'));
+assert.ok(detailsHTML.includes('Release date TBA'));
+assert.ok(detailsHTML.includes('Episode count unavailable'));
+assert.ok(detailsHTML.indexOf('Season 1') < detailsHTML.indexOf('Season 3'));
+assert.ok(detailsHTML.indexOf('Season 3') < detailsHTML.indexOf('Specials'));
+assert.ok(detailsHTML.indexOf('seasons-section') > detailsHTML.indexOf('detail-credit'));
+assert.equal(run("seasonsHTML({mediaType:'movie'})"), '');
 run("$('#status').value = 'all'; $('#search').value = 'nothing-here'; render()");
 assert.equal(get('#empty-state').hidden, false);
 run("$('#search').value = ''; $('#sort').value = 'oldest'; render()");

@@ -116,9 +116,9 @@ footer a:hover { color:#b2c4d0; }
 dialog { background:#202830; color:var(--text); border:1px solid #43515b; border-radius:9px; max-width:680px; width:calc(100% - 40px); padding:32px; box-shadow:0 30px 100px #0009; }
 dialog::backdrop { background:#080d12d9; backdrop-filter:blur(5px); }
 .close-dialog { position:absolute; right:12px; top:8px; background:none; border:0; font-size:28px; color:#a8b7c3; }
-.detail-layout { display:grid; grid-template-columns:130px 1fr; gap:24px; }
-.detail-poster { width:100%; aspect-ratio:2/3; }
-.detail-poster img { width:100%; border-radius:4px; }
+.detail-layout { display:grid; align-items:start; grid-template-columns:130px minmax(0,1fr); gap:24px; }
+.detail-poster { width:100%; align-self:start; }
+.detail-poster img { display:block; width:100%; height:auto; aspect-ratio:auto; border-radius:4px; }
 .detail-layout h2 { font:29px/1.2 Georgia,serif; margin:6px 0 9px; }
 .detail-year { color:#8296a6; font-size:12px; }
 .detail-watch { font-size:12px; color:#a7bbc9; margin:18px 0; }
@@ -289,3 +289,29 @@ dialog::backdrop { background:#080d12d9; backdrop-filter:blur(5px); }
   .header-inner .section-switch { order:2; flex-basis:100%; height:48px; margin:12px 0 0; gap:28px; }
   .section-switch button { font-size:11px; }
 }
+
+/* Details keep the original artwork ratio, independent of the text height. */
+dialog { max-height:calc(100vh - 32px); max-height:calc(100dvh - 32px); overflow-y:auto; overscroll-behavior:contain; }
+.detail-copy { min-width:0; }
+.seasons-section { margin-top:24px; padding-top:20px; border-top:1px solid #3a4853; }
+.seasons-heading { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:baseline; gap:5px 15px; margin-bottom:4px; }
+.seasons-heading h3 { margin:0; font-size:16px; font-weight:500; }
+.seasons-heading>p { margin:0; color:#8fa5b5; font-size:11px; }
+.season-list { list-style:none; margin:0; padding:0; }
+.season-list>li { padding:14px 0; border-bottom:1px solid #33424e; }
+.season-list>li:last-child { border-bottom:0; padding-bottom:0; }
+.season-heading { display:flex; justify-content:space-between; align-items:baseline; gap:15px; }
+.season-heading h4 { margin:0 0 4px; color:#d8e3eb; font-size:13px; font-weight:500; }
+.season-heading p { margin:0; color:#8fa5b5; font-size:11px; }
+.season-link { flex-shrink:0; color:var(--blue); font-size:11px; }
+.season-description { margin-top:8px; color:#91a7b7; font-size:11px; }
+.season-description summary { cursor:pointer; color:#a3b8c7; }
+.season-description p { line-height:1.7; margin:8px 0 0; }
+.seasons-unavailable { color:#8fa5b5; font-size:12px; }
+@media(max-width:480px) {
+  .detail-layout { grid-template-columns:75px minmax(0,1fr); }
+  .seasons-heading { display:block; }
+  .seasons-heading>p { margin-top:6px; }
+}
+
+.detail-poster .poster-placeholder { height:auto; aspect-ratio:2/3; }

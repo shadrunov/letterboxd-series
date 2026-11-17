@@ -54,7 +54,7 @@ class TMDBTest(unittest.TestCase):
             root = self.root(directory, '| Jan | https://www.themoviedb.org/tv/124834 | 1 | watch | watched | | |\n'
                              '| Oct | https://www.themoviedb.org/tv/124834-heartstopper | all | rewatch | watched | | |\n')
             self.assertEqual(discover_references(root), ['tv/124834'])
-            with patch('import_tmdb.fetch_metadata', return_value={'metadataVersion': 2, 'title': 'Heartstopper', 'poster': ''}) as fetch:
+            with patch('import_tmdb.fetch_metadata', return_value={'metadataVersion': 3, 'title': 'Heartstopper', 'poster': ''}) as fetch:
                 import_titles(root, root / 'cache', token='fixture-token')
                 self.assertEqual(fetch.call_count, 1)
             with patch('import_tmdb.fetch_metadata') as fetch:
@@ -74,7 +74,10 @@ class TMDBTest(unittest.TestCase):
 
     def test_metadata_and_poster_saved_without_credentials(self):
         payload = {'id': 124834, 'name': 'Heartstopper', 'first_air_date': '2022-04-22',
-                   'poster_path': '/fixture.jpg', 'genres': [{'name': 'Drama'}], 'overview': 'A story.'}
+                   'poster_path': '/fixture.jpg', 'genres': [{'name': 'Drama'}], 'overview': 'A story.',
+                   'number_of_seasons': 3, 'number_of_episodes': 24, 'status': 'Ended',
+                   'seasons': [{'season_number': 1, 'name': 'Season 1', 'air_date': '2022-04-22', 'episode_count': 8, 'overview': 'First season.'},
+                               {'season_number': 4, 'name': 'Season 4', 'air_date': None, 'episode_count': 0}]}
         with tempfile.TemporaryDirectory() as directory:
             cache = Path(directory)
             with patch('import_tmdb.request_bytes', side_effect=[json.dumps(payload).encode(), b'poster-fixture']) as request:
@@ -82,6 +85,15 @@ class TMDBTest(unittest.TestCase):
             self.assertEqual(metadata['title'], 'Heartstopper')
             self.assertEqual(metadata['year'], 2022)
             self.assertEqual(metadata['source'], 'TMDB')
+            self.assertEqual(metadata['metadataVersion'], 3)
+            self.assertEqual(metadata['numberOfSeasons'], 3)
+            self.assertEqual(metadata['numberOfEpisodes'], 24)
+            self.assertEqual(metadata['showStatus'], 'Ended')
+            self.assertEqual(metadata['seasonDetails'][0]['airDate'], '2022-04-22')
+            self.assertEqual(metadata['seasonDetails'][0]['episodeCount'], 8)
+            self.assertEqual(metadata['seasonDetails'][0]['url'], 'https://www.themoviedb.org/tv/124834/season/1')
+            self.assertIsNone(metadata['seasonDetails'][1]['airDate'])
+            self.assertEqual(metadata['seasonDetails'][1]['episodeCount'], 0)
             self.assertEqual(metadata['poster'], 'assets/posters/tmdb/tv-124834.jpg')
             self.assertEqual((cache / 'posters/tv-124834.jpg').read_bytes(), b'poster-fixture')
             self.assertNotIn('fixture-secret', json.dumps(metadata))

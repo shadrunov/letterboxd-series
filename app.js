@@ -108,12 +108,25 @@ function setSection(mode) {
   state.view = state.views[mode];
   render();
 }
+function seasonsHTML(entry) {
+  if (entry.mediaType !== 'tv') return '';
+  const seasons = [...(entry.seasonDetails || [])].sort((a,b) => (a.number === 0) - (b.number === 0) || a.number - b.number);
+  const facts = [];
+  if (Number.isInteger(entry.numberOfSeasons)) facts.push(`${entry.numberOfSeasons} ${entry.numberOfSeasons === 1 ? 'season' : 'seasons'}`);
+  if (Number.isInteger(entry.numberOfEpisodes)) facts.push(`${entry.numberOfEpisodes} ${entry.numberOfEpisodes === 1 ? 'episode' : 'episodes'}`);
+  if (entry.showStatus) facts.push(escapeHTML(entry.showStatus));
+  return `<section class="seasons-section" aria-labelledby="seasons-heading"><div class="seasons-heading"><h3 id="seasons-heading">Seasons</h3><p>${facts.join(' · ')}</p></div>${seasons.length ? `<ol class="season-list">${seasons.map(season => {
+    const year = season.airDate && /^\d{4}-/.test(season.airDate) ? season.airDate.slice(0,4) : 'Release date TBA';
+    const episodes = Number.isInteger(season.episodeCount) ? `${season.episodeCount} ${season.episodeCount === 1 ? 'episode' : 'episodes'}` : 'Episode count unavailable';
+    return `<li><div class="season-heading"><div><h4>${escapeHTML(season.name || (season.number === 0 ? 'Specials' : 'Season ' + season.number))}</h4><p>${escapeHTML(year)} · ${episodes}</p></div>${season.url ? `<a href="${escapeHTML(season.url)}" class="season-link" target="_blank" rel="noopener noreferrer" aria-label="${escapeHTML(season.name)} on TMDB">TMDB ↗</a>` : ''}</div>${season.overview ? `<details class="season-description"><summary>Season synopsis</summary><p>${escapeHTML(season.overview)}</p></details>` : ''}</li>`;
+  }).join('')}</ol>` : '<p class="seasons-unavailable">Season information is not available yet.</p>'}</section>`;
+}
 function openDetail(id) {
   const entry = state.entries.find(entry => entry.id === id);
   if (!entry) return;
   const history = [...state.entries.filter(other => other.showId === entry.showId)].sort((a,b) => b.watched.localeCompare(a.watched));
   const sourceLinks = [entry.url ? `<a class="detail-link" href="${escapeHTML(entry.url)}" target="_blank" rel="noopener noreferrer">TMDB ↗</a>` : '', entry.letterboxd ? `<a class="detail-link" href="${escapeHTML(entry.letterboxd)}" target="_blank" rel="noopener noreferrer">Letterboxd ↗</a>` : ''].join('');
-  $('#detail-content').innerHTML = `<div class="detail-layout"><div class="detail-poster">${posterHTML(entry)}</div><div class="detail-copy"><span class="detail-year">${[entry.year,...(entry.genres || [])].filter(Boolean).map(escapeHTML).join(' · ')}</span><h2>${escapeHTML(entry.title)}</h2><p class="detail-watch">${seasonLabel(entry)} · ${entry.status === 'unfinished' ? 'Unfinished' : 'Watched'}${entry.watch === 'rewatch' ? ' · ↻ Rewatch' : ''}<br>Logged ${escapeHTML(watchLabel(entry))}</p><div class="entry-tags">${tagsHTML(entry)}</div>${entry.notes ? `<p class="detail-note">${escapeHTML(entry.notes)}</p>` : ''}<div class="other-viewings"><h3>Viewing history</h3>${history.map(other => `<p>${escapeHTML(watchLabel(other))} · ${seasonLabel(other)}${other.watch === 'rewatch' ? ' · ↻ Rewatch' : ''}${other.status === 'unfinished' ? ' · Unfinished' : ''} ${editLink(other)}</p>`).join('')}</div><p class="detail-summary">${escapeHTML(entry.summary || '')}</p><div class="source-links">${sourceLinks}</div>${entry.url ? '<p class="detail-credit">Summary &amp; poster via TMDB.</p>' : ''}</div></div>`;
+  $('#detail-content').innerHTML = `<div class="detail-layout"><div class="detail-poster">${posterHTML(entry)}</div><div class="detail-copy"><span class="detail-year">${[entry.year,...(entry.genres || [])].filter(Boolean).map(escapeHTML).join(' · ')}</span><h2>${escapeHTML(entry.title)}</h2><p class="detail-watch">${seasonLabel(entry)} · ${entry.status === 'unfinished' ? 'Unfinished' : 'Watched'}${entry.watch === 'rewatch' ? ' · ↻ Rewatch' : ''}<br>Logged ${escapeHTML(watchLabel(entry))}</p><div class="entry-tags">${tagsHTML(entry)}</div>${entry.notes ? `<p class="detail-note">${escapeHTML(entry.notes)}</p>` : ''}<div class="other-viewings"><h3>Viewing history</h3>${history.map(other => `<p>${escapeHTML(watchLabel(other))} · ${seasonLabel(other)}${other.watch === 'rewatch' ? ' · ↻ Rewatch' : ''}${other.status === 'unfinished' ? ' · Unfinished' : ''} ${editLink(other)}</p>`).join('')}</div><p class="detail-summary">${escapeHTML(entry.summary || '')}</p><div class="source-links">${sourceLinks}</div>${entry.url ? '<p class="detail-credit">Summary &amp; poster via TMDB.</p>' : ''}</div></div>${seasonsHTML(entry)}`;
   $('#detail').showModal();
 }
 $('#entries').addEventListener('click',event => {

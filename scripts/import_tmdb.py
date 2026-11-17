@@ -118,16 +118,24 @@ def fetch_metadata(reference, token, cache):
         (cache / 'posters' / filename).write_bytes(request_bytes(image_url))
         poster = f'assets/posters/tmdb/{filename}'
     year = int(date[:4]) if re.match(r'^\d{4}-', date) else None
-    return dict(metadataVersion=2, letterboxd=find_letterboxd(reference, title, year), id=f'tmdb:{reference}', title=title, year=int(date[:4]) if re.match(r'^\d{4}-', date) else None,
+    return dict(metadataVersion=3, letterboxd=find_letterboxd(reference, title, year), id=f'tmdb:{reference}', title=title, year=int(date[:4]) if re.match(r'^\d{4}-', date) else None,
                 mediaType=kind, poster=poster, url=reference_url(reference), source='TMDB',
                 genres=[genre['name'] for genre in data.get('genres', [])], summary=data.get('overview') or '',
+                seasonDetails=[dict(number=season['season_number'], name=season.get('name') or f'Season {season["season_number"]}',
+                                    airDate=season.get('air_date'), episodeCount=season.get('episode_count'),
+                                    overview=season.get('overview') or '',
+                                    url=reference_url(reference) + f'/season/{season["season_number"]}')
+                               for season in data.get('seasons', []) if isinstance(season.get('season_number'), int)] if kind == 'tv' else [],
+                numberOfSeasons=data.get('number_of_seasons') if kind == 'tv' else None,
+                numberOfEpisodes=data.get('number_of_episodes') if kind == 'tv' else None,
+                showStatus=data.get('status') or '',
                 imageSource=image_url, fetchedAt=time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()))
 
 
 def import_titles(root=ROOT, cache=CACHE, token=None, refresh=False):
     refs = discover_references(root)
     cached = read_cache(cache)
-    missing = [ref for ref in refs if refresh or ref not in cached or cached[ref].get('metadataVersion') != 2 or
+    missing = [ref for ref in refs if refresh or ref not in cached or cached[ref].get('metadataVersion') != 3 or
                (cached[ref].get('poster') and not (cache / 'posters' / Path(cached[ref]['poster']).name).is_file())]
     if missing and not token:
         raise ValueError('New TMDB links need a token. Add the Actions secret TMDB_READ_ACCESS_TOKEN, or run this script locally and enter your token at the hidden prompt.')
@@ -152,7 +160,7 @@ def main():
     if not token and sys.stdin.isatty():
         refs = [args.check_url] if args.check_url else discover_references()
         cached = read_cache(CACHE)
-        if refs and (args.check_url or args.refresh or any(ref not in cached or (cached[ref].get('poster') and not (CACHE / 'posters' / Path(cached[ref]['poster']).name).is_file()) for ref in refs)):
+        if refs and (args.check_url or args.refresh or any(ref not in cached or cached[ref].get('metadataVersion') != 3 or (cached[ref].get('poster') and not (CACHE / 'posters' / Path(cached[ref]['poster']).name).is_file()) for ref in refs)):
             token = getpass.getpass('TMDB API Read Access Token (hidden): ')
     try:
         if args.check_url:
