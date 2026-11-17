@@ -362,3 +362,6 @@ dialog { max-height:calc(100vh - 32px); max-height:calc(100dvh - 32px); overflow
 .season-watched { position:relative; display:inline-flex; width:28px; height:20px; color:#00d653; flex-shrink:0; }
 .season-watched svg { display:block; width:28px; height:20px; }
 .season-watch-count { position:absolute; right:-5px; bottom:-4px; min-width:14px; height:14px; padding:0 3px; border-radius:7px; border:1px solid #425764; background:#202830; color:#bfd0dc; font-size:9px; font-weight:700; line-height:12px; text-align:center; }
+
+/* Navigation state is indicated by text color, never an underline. */
+.section-switch button,.section-switch button[aria-pressed=true],.view-switch button,.view-switch button[aria-pressed=true] { border:0; box-shadow:none; text-decoration:none; background-image:none; }

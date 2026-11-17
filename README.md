@@ -65,7 +65,7 @@ The site discovers tags automatically. Select several to match all of them on a 
 
 The GitHub Pages workflow imports uncached TMDB titles, validates the diary, runs tests, builds the site, and publishes on pushes to `main`. The repository secret **TMDB_READ_ACCESS_TOKEN** is configured. Both API read tokens and v3 API keys are supported. Credentials are used only on the build runner, never published.
 
-Metadata and posters live in GitHub Actions cache and in the deployed site, not in bot commits. Cache expiry requires another import using the repository secret. The published page needs no server or runtime API calls.
+Metadata and posters live in GitHub Actions cache and in the deployed site, not in bot commits. Cache expiry requires another import using the repository secret. The published page needs no server or runtime API calls. The build embeds the diary data into the HTML and versions the script and stylesheet URLs by content, so cached files cannot override updated layouts or break collection loading.
 
 To refresh metadata and check Letterboxd links again, open **Actions → Deploy GitHub Pages → Run workflow** and select **Refresh all referenced TMDB metadata and posters**. The optional URL test checks a TMDB link without adding a viewing. **Resolve catalogue titles to TMDB** is a maintenance helper for resolving the registered catalogue and exporting metadata as an artifact.
 

@@ -1,5 +1,6 @@
 """Build the static diary from readable yearly Markdown tables. Python 3, no packages."""
 import csv
+import hashlib
 import json
 import re
 import shutil
@@ -140,14 +141,28 @@ def load_diary(root=ROOT):
     return dict(years=[p.stem for p in files], entries=entries)
 
 
+def render_index(source, diary, script, stylesheet):
+    """Publish matching assets and data together, without stale browser file mixes."""
+    marker = '<!-- DIARY_DATA -->'
+    if source.count(marker) != 1:
+        raise ValueError('index.html must contain exactly one diary data marker')
+    payload = json.dumps(diary, ensure_ascii=False).replace('&', '\\u0026').replace('<', '\\u003c').replace('>', '\\u003e')
+    source = source.replace(marker, f'<script id="diary-data" type="application/json">{payload}</script>')
+    for path, content in [('app.js', script), ('style.css', stylesheet)]:
+        version = hashlib.sha256(content).hexdigest()[:16]
+        source = source.replace(f'"{path}"', f'"{path}?v={version}"')
+    return source
+
+
 def build():
     diary = load_diary()
     out = ROOT / '_site'
     if out.exists():
         shutil.rmtree(out)
     out.mkdir()
-    for filename in ('index.html', 'style.css', 'app.js'):
+    for filename in ('style.css', 'app.js'):
         shutil.copy2(ROOT / filename, out / filename)
+    (out / 'index.html').write_text(render_index((ROOT / 'index.html').read_text(), diary, (ROOT / 'app.js').read_bytes(), (ROOT / 'style.css').read_bytes()))
     shutil.copytree(ROOT / 'assets', out / 'assets', dirs_exist_ok=True)
     shutil.copytree(ROOT / 'diary', out / 'diary', dirs_exist_ok=True)
     for entry in diary['entries']:

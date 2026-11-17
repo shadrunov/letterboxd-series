@@ -161,9 +161,15 @@ $('.close-dialog').addEventListener('click',() => $('#detail').close());
 $('#detail').addEventListener('click',event => { if (event.target === $('#detail')) { const r = $('#detail').getBoundingClientRect(); if (event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom) $('#detail').close(); } });
 async function init() {
   try {
-    const response = await fetch('data/diary.json');
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const diary = await response.json();
+    const embedded = $('#diary-data');
+    let diary;
+    if (embedded) {
+      diary = JSON.parse(embedded.textContent);
+    } else {
+      const response = await fetch('data/diary.json', {cache:'no-store'});
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      diary = await response.json();
+    }
     state.entries = diary.entries;
     state.years = diary.years.sort().reverse();
     state.years.forEach(year => { const option = document.createElement('option'); option.value = year; option.textContent = year; $('#year').append(option); });
@@ -185,6 +191,7 @@ async function init() {
     const knownTags = new Set(state.entries.flatMap(entry => entry.tags));
     state.tags = new Set(params.getAll('tag').filter(tag => knownTags.has(tag)));
     render();
+    $('#load-error').hidden = true;
   } catch (error) { $('#load-error').hidden = false; console.error('Unable to load viewing diary:',error); }
 }
 init();

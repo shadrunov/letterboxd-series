@@ -4,6 +4,7 @@ import vm from 'node:vm';
 import assert from 'node:assert/strict';
 
 const source = await readFile(new URL('../app.js', import.meta.url), 'utf8');
+const page = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 const fixture = {
   years: ['2024', '2025', '2026'],
   entries: [
@@ -18,13 +19,18 @@ const fixture = {
     { id: 'four', showId: 'new', title: 'A <New> Series', watched: '2026', seasons: [1], watch: 'watch', status: 'watched', tags: ['deutsch'], notes: '<b>personal</b>' },
   ],
 };
-async function createHarness(search = '') {
+async function createHarness(search = '', {inline = false, failFetch = false} = {}) {
+  const markup = inline ? page.replace('<!-- DIARY_DATA -->', '<script id="diary-data" type="application/json"></script>') : page;
+  const ids = new Set([...markup.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]));
+  const requests = [];
+  const errors = [];
   const elements = new Map();
   const get = key => {
+    if (key.startsWith('#') && !ids.has(key.slice(1))) return null;
     if (!elements.has(key)) elements.set(key, {
       value: key === '#sort' ? 'newest' : ['#year','#status','#watch'].includes(key) ? 'all' : '',
       options: [{value:'all'}, {value:'watched'}, {value:'unfinished'}, {value:'watch'}, {value:'rewatch'}, {value:'newest'}, {value:'oldest'}, {value:'title'}],
-      innerHTML: '', textContent: '', hidden: false, open: false,
+      innerHTML: '', textContent: key === '#diary-data' ? JSON.stringify(fixture) : '', hidden: key === '#load-error', open: false,
       addEventListener() {}, append(option) { this.options.push(option); }, setAttribute() {},
       showModal() { this.open = true; }, close() { this.open = false; },
     });
@@ -32,15 +38,26 @@ async function createHarness(search = '') {
   };
   const context = vm.createContext({
     document: {querySelector:get, querySelectorAll:()=>[], createElement:()=>({})},
-    fetch: async () => ({ok:true, json:async()=>structuredClone(fixture)}),
+    fetch: async (...args) => { requests.push(args); if (failFetch) throw new Error('Network unavailable'); return {ok:true, json:async()=>structuredClone(fixture)}; },
     history: {replaceState(_a,_b,url) { context.lastURL = url; }},
-    URLSearchParams, location: {pathname:'/letterboxd-series/', search, hash:''}, console,
+    URLSearchParams, location: {pathname:'/letterboxd-series/', search, hash:''}, console:{log:console.log,error:(...args)=>errors.push(args)},
   });
   vm.runInContext(source.replace(/init\(\);\s*$/, ''), context);
   await vm.runInContext('init()', context);
-  return { get, run: script => vm.runInContext(script, context), context };
+  return { get, run: script => vm.runInContext(script, context), context, requests, errors };
 }
-const {get, run, context} = await createHarness();
+const {get, run, context, requests} = await createHarness();
+assert.equal(get('#load-error').hidden, true);
+assert.equal(get('#diary-count'), null); // Removed IDs must never be fabricated by the mock.
+assert.equal(requests[0][1].cache, 'no-store');
+const embedded = await createHarness('', {inline:true, failFetch:true});
+assert.equal(embedded.requests.length, 0);
+assert.equal(embedded.get('#load-error').hidden, true);
+assert.equal(embedded.get('#total-viewings').textContent, 4);
+assert.ok(embedded.get('#entries').innerHTML.includes('Young Royals'));
+const unavailable = await createHarness('', {failFetch:true});
+assert.equal(unavailable.get('#load-error').hidden, false);
+assert.equal(unavailable.errors.length, 1);
 assert.equal(get('#total-series').textContent, 2);
 assert.equal(get('#total-viewings').textContent, 4);
 assert.equal(get('#total-rewatches').textContent, 2);
