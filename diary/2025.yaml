@@ -1,3 +1,16 @@
 # One entry per viewing. Names are filled in by GitHub Actions.
 
-[]
+- url: https://www.themoviedb.org/tv/114703
+  date: 2025-11
+  seasons: [1]
+  tags: ["unterwegs", "queer"]
+
+- url: https://www.themoviedb.org/tv/157208/
+  date: 2025-10
+  seasons: [1]
+  tags: ["unterwegs", "queer"]
+
+- url: https://www.themoviedb.org/tv/249042-adolescence
+  date: 2025-04
+  seasons: [1]
+  tags: ["queer"]
