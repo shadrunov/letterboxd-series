@@ -108,6 +108,17 @@ function setSection(mode) {
   state.view = state.views[mode];
   render();
 }
+function seasonWatchCount(entry, season) {
+  return state.entries.filter(viewing => viewing.showId === entry.showId && viewing.status === 'watched' && (
+    viewing.seasons.includes(season.number) ||
+    (viewing.allSeasons && season.number > 0 && season.airDate && season.airDate.slice(0, viewing.watched.length) <= viewing.watched)
+  )).length;
+}
+function watchedEye(count) {
+  if (!count) return '';
+  const label = count === 1 ? 'Watched once' : `Watched ${count} times`;
+  return `<span class="season-watched" role="img" aria-label="${label}" title="${label}"><svg viewBox="0 0 40 26" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="M1 13Q20-12 39 13Q20 38 1 13ZM20 5a8 8 0 1 0 0 16a8 8 0 1 0 0-16Z"/><circle cx="20" cy="13" r="4.5" fill="currentColor"/></svg>${count > 1 ? `<span class="season-watch-count" aria-hidden="true">${count}</span>` : ''}</span>`;
+}
 function seasonsHTML(entry) {
   if (entry.mediaType !== 'tv') return '';
   const seasons = [...(entry.seasonDetails || [])].sort((a,b) => (a.number === 0) - (b.number === 0) || a.number - b.number);
@@ -118,7 +129,7 @@ function seasonsHTML(entry) {
   return `<section class="seasons-section" aria-labelledby="seasons-heading"><div class="seasons-heading"><h3 id="seasons-heading">Seasons</h3><p>${facts.join(' · ')}</p></div>${seasons.length ? `<ol class="season-list">${seasons.map(season => {
     const year = season.airDate && /^\d{4}-/.test(season.airDate) ? season.airDate.slice(0,4) : 'Release date TBA';
     const episodes = Number.isInteger(season.episodeCount) ? `${season.episodeCount} ${season.episodeCount === 1 ? 'episode' : 'episodes'}` : 'Episode count unavailable';
-    return `<li><div class="season-heading"><div><h4>${escapeHTML(season.name || (season.number === 0 ? 'Specials' : 'Season ' + season.number))}</h4><p>${escapeHTML(year)} · ${episodes}</p></div>${season.url ? `<a href="${escapeHTML(season.url)}" class="season-link" target="_blank" rel="noopener noreferrer" aria-label="${escapeHTML(season.name)} on TMDB">TMDB ↗</a>` : ''}</div>${season.overview ? `<details class="season-description"><summary>Season synopsis</summary><p>${escapeHTML(season.overview)}</p></details>` : ''}</li>`;
+    return `<li><div class="season-heading"><div><h4>${escapeHTML(season.name || (season.number === 0 ? 'Specials' : 'Season ' + season.number))}</h4><p>${escapeHTML(year)} · ${episodes}</p></div><div class="season-actions">${watchedEye(seasonWatchCount(entry, season))}${season.url ? `<a href="${escapeHTML(season.url)}" class="season-link" target="_blank" rel="noopener noreferrer" aria-label="${escapeHTML(season.name)} on TMDB">TMDB ↗</a>` : ''}</div></div>${season.overview ? `<details class="season-description"><summary>Season synopsis</summary><p>${escapeHTML(season.overview)}</p></details>` : ''}</li>`;
   }).join('')}</ol>` : '<p class="seasons-unavailable">Season information is not available yet.</p>'}</section>`;
 }
 function openDetail(id) {
