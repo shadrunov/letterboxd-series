@@ -200,14 +200,14 @@ dialog::backdrop { background:#080d12d9; backdrop-filter:blur(5px); }
 .view-switch button { font-size:11px; }
 .view-large .year-entries { grid-template-columns:repeat(5,minmax(0,1fr)); gap:30px 20px; }
 .view-small .year-entries { grid-template-columns:repeat(8,minmax(0,1fr)); gap:25px 15px; }
-.view-large .viewing,.view-small .viewing { flex-direction:column; align-items:stretch; gap:0; border:0; padding:0; background:none; }
+.view-large .viewing,.view-small .viewing { flex-direction:column; align-items:stretch; align-self:start; gap:0; border:0; padding:0; background:none; }
 .view-large .viewing-poster,.view-small .viewing-poster { flex:none; width:100%; height:auto; aspect-ratio:2/3; border-radius:5px; box-shadow:0 3px 10px #0006; }
 .view-large .viewing-poster img,.view-small .viewing-poster img { aspect-ratio:2/3; }
-.view-large .viewing-info,.view-small .viewing-info { flex:none; width:100%; margin-top:10px; }
-.view-large .card-title,.view-small .card-title { min-height:2.8em; font-size:12px; }
-.view-small .card-title { font-size:11px; }
-.view-large .viewing-seasons,.view-small .viewing-seasons { margin:5px 0 7px; }
-.view-large .viewing-when,.view-small .viewing-when { flex-direction:row; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:4px 8px; width:100%; margin-top:auto; padding-top:8px; }
+.view-large .viewing-info,.view-small .viewing-info { flex:none; width:100%; margin-top:8px; }
+.view-large .card-title,.view-small .card-title { min-height:0; width:100%; font-size:12px; }
+.view-small .card-title { display:flex; align-items:flex-start; height:2.8em; font-size:11px; }
+.view-large .viewing-seasons,.view-small .viewing-seasons { margin:3px 0 0; line-height:1.5; }
+.view-large .viewing-when,.view-small .viewing-when { flex-direction:row; align-items:baseline; justify-content:flex-start; flex-wrap:wrap; gap:3px 9px; width:100%; margin-top:4px; padding-top:0; }
 .viewing-count { color:#7392a6; font-size:9px; }
 .watched-collection { padding-top:18px; }
 .source-links { display:flex; gap:22px; }
@@ -381,3 +381,7 @@ dialog { max-height:calc(100vh - 32px); max-height:calc(100dvh - 32px); overflow
   .header-inner .header-search { order:1; margin-left:auto; flex-basis:128px; width:128px; }
   .header-inner .section-switch { order:2; }
 }
+
+.card-title-text { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; }
+.viewing-seasons .release-year { margin:0; font-size:inherit; }
+.view-large .viewing>.entry-tags,.view-small .viewing>.entry-tags { margin-top:5px; }
