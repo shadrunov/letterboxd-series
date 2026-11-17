@@ -197,3 +197,17 @@ dialog::backdrop { background:#080d12d9; backdrop-filter:blur(5px); }
 
 .tmdb-attribution { flex-basis:100%; display:flex; gap:12px; align-items:center; font-size:9px; color:#7b8e9c; }
 .tmdb-attribution img { display:block; width:65px; height:auto; }
+
+/* Poster cards: artwork first, viewing details underneath. */
+.view-cards .year-entries { grid-template-columns:repeat(6,minmax(0,1fr)); gap:27px 18px; }
+.view-cards .viewing { flex-direction:column; align-items:stretch; gap:0; border:0; padding:0; background:none; }
+.view-cards .viewing-poster { flex:none; width:100%; height:auto; aspect-ratio:2/3; border-radius:6px; box-shadow:0 3px 10px #0006; transition:border-color .15s; }
+.view-cards .viewing-poster img { aspect-ratio:2/3; }
+.view-cards .viewing-info { flex:none; width:100%; margin-top:10px; }
+.view-cards .card-title { min-height:2.8em; font-size:12px; }
+.view-cards .viewing-seasons { margin:5px 0 7px; }
+.view-cards .viewing-when { flex-direction:row; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:4px 8px; width:100%; margin-top:auto; padding-top:8px; }
+@media(max-width:1050px) { .view-cards .year-entries { grid-template-columns:repeat(5,minmax(0,1fr)); gap:24px 15px; } }
+@media(max-width:800px) { .view-cards .year-entries { grid-template-columns:repeat(4,minmax(0,1fr)); } }
+@media(max-width:600px) { .view-cards .year-entries { grid-template-columns:repeat(3,minmax(0,1fr)); gap:22px 13px; } }
+@media(max-width:380px) { .view-cards .year-entries { grid-template-columns:repeat(2,minmax(0,1fr)); } }

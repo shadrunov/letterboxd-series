@@ -1,6 +1,6 @@
 # Series
 
-[Aleksei’s series diary](https://shadrunov.github.io/letterboxd-series/) — a personal viewing history inspired by Letterboxd, with compact cards and a list, grouped by year, newest year first.
+[Aleksei’s series diary](https://shadrunov.github.io/letterboxd-series/) — a personal viewing history inspired by Letterboxd, with compact poster cards (details underneath) and a list, grouped by year, newest year first.
 
 ## Edit the diary
 
@@ -57,6 +57,8 @@ For a complete rewatch, use `all` and `rewatch`. For selected seasons, use `1, 3
 3. Add a TMDB link to a year table and commit. The existing Pages workflow handles import, validation, build, and deployment automatically.
 
 Credentials stay in Actions, and the published site makes no TMDB API requests. Generated metadata and downloaded posters are kept in GitHub Actions cache and included in the published site, not committed back to your repository. A cache miss or expiry requires the secret to fetch the data again. This avoids bot commits and extra deployment loops.
+
+To test an individual link without adding it to the diary, run the workflow with **Optional TMDB URL to test without adding a viewing** filled in. It checks API access and downloads the poster into temporary storage.
 
 To refresh cached titles and posters, open **Actions → Deploy GitHub Pages → Run workflow**, check **Refresh all referenced TMDB metadata and posters**, and run it.
 

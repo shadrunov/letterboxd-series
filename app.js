@@ -7,7 +7,7 @@ const seasonLabel = entry => entry.mediaType === 'movie' ? 'Film' : entry.allSea
 const watchLabel = entry => entry.watched.length === 4 ? `${entry.watched} · month not recorded` : `${months[Number(entry.watched.slice(5)) - 1]} ${entry.watched.slice(0, 4)}`;
 const tagsHTML = entry => entry.tags.map(tag => `<button class="tag" type="button" data-tag="${escapeHTML(tag)}" aria-pressed="${state.tags.has(tag)}">${escapeHTML(tag)}</button>`).join('');
 function posterHTML(entry) {
-  return entry.poster ? `<img src="${escapeHTML(entry.poster)}" alt="" loading="lazy" width="60" height="90">` : '<span class="poster-placeholder" aria-hidden="true">tv</span>';
+  return entry.poster ? `<img src="${escapeHTML(entry.poster)}" alt="" loading="lazy" width="200" height="300">` : '<span class="poster-placeholder" aria-hidden="true">tv</span>';
 }
 function entryHTML(entry) {
   const title = escapeHTML(entry.title);

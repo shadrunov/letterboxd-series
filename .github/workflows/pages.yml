@@ -4,6 +4,10 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
+      verify_tmdb_url:
+        description: Optional TMDB URL to test without adding a viewing
+        type: string
+        default: ''
       refresh_tmdb:
         description: Refresh all referenced TMDB metadata and posters
         type: boolean
@@ -34,6 +38,12 @@ jobs:
           path: .cache/tmdb
           key: tmdb-v1-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: tmdb-v1-
+      - name: Verify requested TMDB link
+        if: ${{ inputs.verify_tmdb_url != '' }}
+        env:
+          TMDB_READ_ACCESS_TOKEN: ${{ secrets.TMDB_READ_ACCESS_TOKEN }}
+          TMDB_TEST_URL: ${{ inputs.verify_tmdb_url }}
+        run: python3 scripts/import_tmdb.py --check-url "$TMDB_TEST_URL"
       - name: Import TMDB links
         env:
           TMDB_READ_ACCESS_TOKEN: ${{ secrets.TMDB_READ_ACCESS_TOKEN }}

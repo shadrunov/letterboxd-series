@@ -6,6 +6,7 @@ import os
 import re
 import sys
 import time
+import tempfile
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -108,15 +109,26 @@ def import_titles(root=ROOT, cache=CACHE, token=None, refresh=False):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--refresh', action='store_true', help='Fetch referenced titles again, including their posters')
+    parser.add_argument('--check-url', help='Fetch one TMDB link into temporary storage to verify API access, without adding a viewing')
     args = parser.parse_args()
     token = os.environ.get('TMDB_READ_ACCESS_TOKEN')
     if not token and sys.stdin.isatty():
-        refs = discover_references()
+        refs = [args.check_url] if args.check_url else discover_references()
         cached = read_cache(CACHE)
-        if refs and (args.refresh or any(ref not in cached or (cached[ref].get('poster') and not (CACHE / 'posters' / Path(cached[ref]['poster']).name).is_file()) for ref in refs)):
+        if refs and (args.check_url or args.refresh or any(ref not in cached or (cached[ref].get('poster') and not (CACHE / 'posters' / Path(cached[ref]['poster']).name).is_file()) for ref in refs)):
             token = getpass.getpass('TMDB API Read Access Token (hidden): ')
     try:
-        import_titles(token=token, refresh=args.refresh)
+        if args.check_url:
+            reference = parse_reference(args.check_url)
+            if not reference:
+                raise ValueError('--check-url needs a TMDB TV or movie link')
+            if not token:
+                raise ValueError('TMDB verification needs TMDB_READ_ACCESS_TOKEN')
+            with tempfile.TemporaryDirectory() as directory:
+                result = fetch_metadata(reference, token, Path(directory))
+                print(f'Verified TMDB {reference}: {result["title"]}; ' + ('poster downloaded.' if result['poster'] else 'no poster available.'))
+        else:
+            import_titles(token=token, refresh=args.refresh)
     except (ValueError, OSError) as error:
         print(f'Import failed: {error}', file=sys.stderr)
         return 1
