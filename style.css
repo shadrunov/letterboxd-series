@@ -19,7 +19,7 @@ main,.header-inner { max-width:1180px; margin:auto; padding:0 36px; }
 .brand-dots i+i { margin-left:-4px; background:var(--green); }
 .brand-dots i+i+i { background:var(--blue); }
 .header-note { font-size:10px; letter-spacing:2px; color:#6f8191; }
-.github-link { margin-left:auto; color:#9cabb8; font-size:12px; }
+.github-link { margin-left:0; color:#9cabb8; font-size:12px; }
 .github-link span { margin-left:9px; color:#607080; }
 .intro { display:flex; align-items:center; justify-content:space-between; gap:25px; padding:35px 0 30px; }
 .eyebrow { font-size:9px; letter-spacing:1.6px; color:#9baab7; font-weight:600; margin:0 0 12px; }
@@ -199,10 +199,11 @@ dialog::backdrop { background:#080d12d9; backdrop-filter:blur(5px); }
 .tmdb-attribution img { display:block; width:65px; height:auto; }
 
 /* Diary and watched navigation. */
-.section-switch { display:flex; align-items:center; gap:25px; }
-.section-switch button { background:none; border:0; padding:3px 0; font-size:14px; color:#7e91a0; }
-.section-switch button[aria-pressed=true] { color:#e3ebf0; }
-.section-switch button span { color:#8399a9; background:#26333d; padding:2px 6px; margin-left:5px; border-radius:3px; font-size:10px; }
+.section-switch { display:flex; align-items:center; align-self:stretch; gap:28px; margin-left:auto; }
+.section-switch button { display:flex; height:100%; align-items:center; gap:7px; background:none; border:0; border-bottom:2px solid transparent; padding:2px 0 0; color:#9ab; font-size:12px; font-weight:600; letter-spacing:1.3px; text-transform:uppercase; }
+.section-switch button:hover { color:#fff; }
+.section-switch button[aria-pressed=true] { color:#fff; border-bottom-color:var(--green); }
+.section-switch button span { color:#718697; font-size:10px; font-weight:400; letter-spacing:0; }
 .view-switch { gap:15px; }
 .view-switch button { font-size:11px; }
 .view-large .year-entries { grid-template-columns:repeat(5,minmax(0,1fr)); gap:30px 20px; }
@@ -277,4 +278,14 @@ dialog::backdrop { background:#080d12d9; backdrop-filter:blur(5px); }
   .diary-table td { padding:15px 8px; }
   .diary-series { gap:12px; }
   .calendar-month { width:56px; min-height:54px; }
+}
+
+/* Keep primary sections in the masthead, including on narrow screens. */
+.collection-nav h2 { color:#9ab; font-size:13px; font-weight:400; letter-spacing:1.5px; text-transform:uppercase; }
+@media(max-width:600px) {
+  .header-inner { height:auto; min-height:72px; flex-wrap:wrap; gap:0; padding-top:16px; }
+  .header-inner .wordmark { order:0; }
+  .header-inner .github-link { order:1; margin-left:auto; }
+  .header-inner .section-switch { order:2; flex-basis:100%; height:48px; margin:12px 0 0; gap:28px; }
+  .section-switch button { font-size:11px; }
 }
