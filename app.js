@@ -1,113 +1,140 @@
 'use strict';
 const $ = selector => document.querySelector(selector);
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const state = { entries: [], years: [], view: 'cards', tags: new Set() };
+const state = { entries: [], years: [], mode: 'diary', view: 'list', views: {diary:'list', watched:'large'}, tags: new Set() };
 const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[c]));
 const seasonLabel = entry => entry.mediaType === 'movie' ? 'Film' : entry.allSeasons ? 'All seasons' : entry.seasons.map(n => `S${n}`).join(' · ');
 const watchLabel = entry => entry.watched.length === 4 ? `${entry.watched} · month not recorded` : `${months[Number(entry.watched.slice(5)) - 1]} ${entry.watched.slice(0, 4)}`;
+const editURL = entry => entry.editUrl || `https://github.com/shadrunov/letterboxd-series/edit/main/diary/${entry.watched.slice(0,4)}.md`;
+const editLink = entry => `<a class="edit-entry" href="${escapeHTML(editURL(entry))}" target="_blank" rel="noopener noreferrer" aria-label="Edit ${escapeHTML(entry.title)} viewing on GitHub" title="Edit on GitHub">✎</a>`;
 const tagsHTML = entry => entry.tags.map(tag => `<button class="tag" type="button" data-tag="${escapeHTML(tag)}" aria-pressed="${state.tags.has(tag)}">${escapeHTML(tag)}</button>`).join('');
 function posterHTML(entry) {
   return entry.poster ? `<img src="${escapeHTML(entry.poster)}" alt="" loading="lazy" width="200" height="300">` : '<span class="poster-placeholder" aria-hidden="true">tv</span>';
 }
-function entryHTML(entry) {
+function cardHTML(entry, aggregate = false) {
   const title = escapeHTML(entry.title);
-  const unfinished = entry.status === 'unfinished';
-  return `<article class="viewing ${unfinished ? 'is-unfinished' : ''}">
-    <button class="viewing-poster" type="button" data-id="${entry.id}" aria-label="Details for ${title}, ${escapeHTML(watchLabel(entry))}">${posterHTML(entry)}</button>
+  return `<article class="viewing ${entry.status === 'unfinished' ? 'is-unfinished' : ''}">
+    <button class="viewing-poster" type="button" data-id="${entry.id}" aria-label="Details for ${title}">${posterHTML(entry)}</button>
     <div class="viewing-info"><button class="card-title" type="button" data-id="${entry.id}">${title} ${entry.year ? `<span class="release-year">${entry.year}</span>` : ''}</button>
-      <p class="viewing-seasons">${seasonLabel(entry)}${entry.watch === 'rewatch' ? ' <span class="rewatch-badge">↻ Rewatch</span>' : ''}</p>
-      <div class="entry-tags">${tagsHTML(entry)}</div>${entry.notes ? `<p class="viewing-notes">${escapeHTML(entry.notes)}</p>` : ''}
-    </div><div class="viewing-when"><span>${entry.watched.length === 4 ? 'Month unknown' : months[Number(entry.watched.slice(5)) - 1]}</span><span class="watch-status">${unfinished ? 'Ⅱ Unfinished' : '✓ Watched'}</span></div>
+      <p class="viewing-seasons">${seasonLabel(entry)}${!aggregate && entry.watch === 'rewatch' ? ' <span class="rewatch-badge">↻ Rewatch</span>' : ''}</p>
+      <div class="entry-tags">${tagsHTML(entry)}</div>
+    </div><div class="viewing-when"><span>${escapeHTML(watchLabel(entry))}</span>${aggregate ? `<span class="viewing-count">${entry.viewingCount} ${entry.viewingCount === 1 ? 'viewing' : 'viewings'}</span>` : `<span class="watch-status">${entry.status === 'unfinished' ? 'Ⅱ Unfinished' : '✓ Watched'}</span>${editLink(entry)}`}</div>
   </article>`;
+}
+function diaryTable(entries) {
+  let previousMonth = null;
+  return `<div class="diary-table-wrap"><table class="diary-table"><thead><tr><th scope="col">Month</th><th scope="col">Series</th><th scope="col">Released</th><th scope="col">Seasons</th><th scope="col">Rewatch</th><th scope="col">Edit</th></tr></thead><tbody>${entries.map(entry => {
+    const showMonth = previousMonth !== entry.watched;
+    previousMonth = entry.watched;
+    const month = entry.watched.length === 4 ? '?' : months[Number(entry.watched.slice(5)) - 1];
+    return `<tr><td class="month-cell">${showMonth ? `<div class="calendar-month"><strong>${month}</strong><span>${entry.watched.slice(0,4)}</span></div>` : `<span class="sr-only">${escapeHTML(watchLabel(entry))}</span>`}</td><td class="series-cell"><div class="diary-series"><button class="viewing-poster" type="button" data-id="${entry.id}" aria-label="Details for ${escapeHTML(entry.title)}">${posterHTML(entry)}</button><div><button class="card-title" type="button" data-id="${entry.id}">${escapeHTML(entry.title)}</button><div class="entry-tags">${tagsHTML(entry)}</div></div></div></td><td class="released-cell">${entry.year || '—'}</td><td class="seasons-cell">${seasonLabel(entry)}${entry.status === 'unfinished' ? '<span class="unfinished-text">Unfinished</span>' : ''}</td><td class="rewatch-cell">${entry.watch === 'rewatch' ? '<span class="rewatch-icon" aria-label="Rewatch" title="Rewatch">↻</span>' : '<span class="sr-only">Regular watch</span>'}</td><td class="edit-cell">${editLink(entry)}</td></tr>`;
+  }).join('')}</tbody></table></div>`;
 }
 function matchingEntries() {
   const query = $('#search').value.trim().toLocaleLowerCase();
   return state.entries.filter(entry =>
     ($('#year').value === 'all' || entry.watched.startsWith($('#year').value)) &&
-    ($('#status').value === 'all' || entry.status === $('#status').value) &&
+    (state.mode === 'watched' ? entry.status === 'watched' : $('#status').value === 'all' || entry.status === $('#status').value) &&
     ($('#watch').value === 'all' || entry.watch === $('#watch').value) &&
     [...state.tags].every(tag => entry.tags.includes(tag)) &&
     [entry.title, entry.notes, ...entry.tags].join(' ').toLocaleLowerCase().includes(query));
 }
 function sortEntries(entries) {
-  return entries.sort((a, b) => {
-    if ($('#sort').value === 'title') return a.title.localeCompare(b.title) || a.watched.localeCompare(b.watched);
-    // Unknown watch months stay at the end in either direction.
-    if (a.watched.length !== b.watched.length) return b.watched.length - a.watched.length;
+  return entries.sort((a,b) => {
+    if ($('#sort').value === 'title') return a.title.localeCompare(b.title) || b.watched.localeCompare(a.watched);
+    if (a.watched.slice(0,4) === b.watched.slice(0,4) && a.watched.length !== b.watched.length) return b.watched.length - a.watched.length;
     return $('#sort').value === 'oldest' ? a.watched.localeCompare(b.watched) : b.watched.localeCompare(a.watched);
   });
 }
+function watchedEntries(entries) {
+  const groups = new Map();
+  for (const entry of entries) {
+    if (entry.status !== 'watched') continue;
+    if (!groups.has(entry.showId)) groups.set(entry.showId, []);
+    groups.get(entry.showId).push(entry);
+  }
+  return sortEntries([...groups.values()].map(group => {
+    const latest = [...group].sort((a,b) => b.watched.localeCompare(a.watched))[0];
+    return {...latest, seasons:[...new Set(group.flatMap(entry => entry.seasons))].sort((a,b) => a-b), allSeasons:group.some(entry => entry.allSeasons), tags:[...new Set(group.flatMap(entry => entry.tags))], viewingCount:group.length};
+  }));
+}
 function renderTags() {
-  const allTags = [...new Set(state.entries.flatMap(entry => entry.tags))].sort((a,b) => a.localeCompare(b));
-  $('#tag-filters').innerHTML = `<button class="tag all-tags" type="button" data-clear-tags aria-pressed="${state.tags.size === 0}">All tags</button>` + allTags.map(tag => `<button class="tag" type="button" data-tag="${escapeHTML(tag)}" aria-pressed="${state.tags.has(tag)}">${escapeHTML(tag)} <span>${state.entries.filter(entry => entry.tags.includes(tag)).length}</span></button>`).join('');
-  $('#tag-help').hidden = allTags.length > 0;
+  const entries = state.mode === 'watched' ? state.entries.filter(entry => entry.status === 'watched') : state.entries;
+  const tags = [...new Set(entries.flatMap(entry => entry.tags))].sort((a,b) => a.localeCompare(b));
+  $('#tag-filters').innerHTML = `<button class="tag all-tags" type="button" data-clear-tags aria-pressed="${state.tags.size === 0}">All tags</button>` + tags.map(tag => `<button class="tag" type="button" data-tag="${escapeHTML(tag)}" aria-pressed="${state.tags.has(tag)}">${escapeHTML(tag)} <span>${entries.filter(entry => entry.tags.includes(tag)).length}</span></button>`).join('');
+  $('#tag-help').hidden = tags.length > 0;
 }
 function render() {
   const entries = matchingEntries();
-  const hasFilters = $('#search').value.trim() || $('#status').value !== 'all' || $('#watch').value !== 'all' || state.tags.size;
-  const years = state.years.filter(year => $('#year').value === 'all' || year === $('#year').value);
-  $('#entries').className = `year-groups view-${state.view}`;
-  $('#entries').innerHTML = years.map(year => {
-    const group = sortEntries(entries.filter(entry => entry.watched.startsWith(year)));
-    if (!group.length && hasFilters) return '';
-    const shows = new Set(group.map(entry => entry.showId)).size;
-    return `<section class="year-group" aria-labelledby="heading-${year}"><div class="year-heading"><div><h3 id="heading-${year}">${year}</h3><span>${group.length} ${group.length === 1 ? 'viewing' : 'viewings'} · ${shows} series</span></div><a href="https://github.com/shadrunov/letterboxd-series/edit/main/diary/${year}.md" target="_blank" rel="noopener noreferrer" aria-label="Edit ${year} diary table">Edit year <span aria-hidden="true">↗</span></a></div><div class="year-entries">${group.map(entryHTML).join('') || '<p class="empty-year">No viewings recorded yet.</p>'}</div></section>`;
-  }).join('');
-  $('#collection-count').textContent = entries.length;
-  $('#results-label').textContent = `${entries.length} ${entries.length === 1 ? 'viewing' : 'viewings'} · ${new Set(entries.map(entry => entry.showId)).size} series${state.tags.size > 1 ? ' · Matching all selected tags' : ''}`;
-  $('#empty-state').hidden = entries.length > 0 || !hasFilters;
-  document.querySelectorAll('[data-view]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.view === state.view)));
+  const watched = state.mode === 'watched';
+  const hasFilters = $('#search').value.trim() || (!watched && $('#status').value !== 'all') || $('#watch').value !== 'all' || state.tags.size;
+  if (watched && state.view === 'list') state.view = state.views.watched;
+  $('#collection-title').textContent = watched ? 'Watched' : 'Diary';
+  $('#status-filter').hidden = watched;
+  document.querySelectorAll('[data-section]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.section === state.mode)));
+  document.querySelectorAll('[data-view]').forEach(button => {
+    button.hidden = watched && button.dataset.view === 'list';
+    button.setAttribute('aria-pressed', String(button.dataset.view === state.view));
+  });
+  if (watched) {
+    const shows = watchedEntries(entries);
+    $('#entries').className = `watched-collection view-${state.view}`;
+    $('#entries').innerHTML = `<div class="year-entries">${shows.map(entry => cardHTML(entry, true)).join('')}</div>`;
+    $('#results-label').textContent = `${shows.length} series watched · One card per series`;
+  } else {
+    $('#entries').className = `year-groups view-${state.view}`;
+    $('#entries').innerHTML = state.years.filter(year => $('#year').value === 'all' || year === $('#year').value).map(year => {
+      const group = sortEntries(entries.filter(entry => entry.watched.startsWith(year)));
+      if (!group.length && hasFilters) return '';
+      return `<section class="year-group" aria-labelledby="heading-${year}"><div class="year-heading"><div><h3 id="heading-${year}">${year}</h3><span>${group.length} ${group.length === 1 ? 'viewing' : 'viewings'}</span></div><a href="https://github.com/shadrunov/letterboxd-series/edit/main/diary/${year}.md" target="_blank" rel="noopener noreferrer">Edit year ↗</a></div>${group.length ? state.view === 'list' ? diaryTable(group) : `<div class="year-entries">${group.map(entry => cardHTML(entry)).join('')}</div>` : '<p class="empty-year">No viewings recorded yet.</p>'}</section>`;
+    }).join('');
+    $('#results-label').textContent = `${entries.length} ${entries.length === 1 ? 'viewing' : 'viewings'} · ${new Set(entries.map(entry => entry.showId)).size} series${state.tags.size > 1 ? ' · Matching all selected tags' : ''}`;
+  }
+  $('#empty-state').hidden = entries.length > 0 || (!watched && !hasFilters);
   renderTags();
   const params = new URLSearchParams();
-  for (const key of ['year','status','watch']) if ($(`#${key}`).value !== 'all') params.set(key, $(`#${key}`).value);
-  if ($('#search').value.trim()) params.set('q', $('#search').value.trim());
-  if ($('#sort').value !== 'newest') params.set('sort', $('#sort').value);
-  if (state.view !== 'cards') params.set('view', state.view);
-  [...state.tags].forEach(tag => params.append('tag', tag));
-  history.replaceState(null, '', `${location.pathname}${params.size ? '?' + params.toString() : ''}${location.hash}`);
+  if (watched) params.set('section','watched');
+  for (const key of ['year','status','watch']) if ((!watched || key !== 'status') && $(`#${key}`).value !== 'all') params.set(key,$(`#${key}`).value);
+  if ($('#search').value.trim()) params.set('q',$('#search').value.trim());
+  if ($('#sort').value !== 'newest') params.set('sort',$('#sort').value);
+  if (state.view !== (watched ? 'large' : 'list')) params.set('view',state.view);
+  [...state.tags].forEach(tag => params.append('tag',tag));
+  history.replaceState(null,'',`${location.pathname}${params.size ? '?' + params : ''}${location.hash}`);
 }
-function toggleTag(tag) {
-  if (state.tags.has(tag)) state.tags.delete(tag); else state.tags.add(tag);
+function toggleTag(tag) { if (state.tags.has(tag)) state.tags.delete(tag); else state.tags.add(tag); render(); }
+function setSection(mode) {
+  state.views[state.mode] = state.view;
+  state.mode = mode;
+  state.view = state.views[mode];
   render();
 }
 function openDetail(id) {
   const entry = state.entries.find(entry => entry.id === id);
   if (!entry) return;
-  const others = state.entries.filter(other => other.showId === entry.showId && other.id !== id).sort((a,b) => b.watched.localeCompare(a.watched));
-  $('#detail-content').innerHTML = `<div class="detail-layout"><div class="detail-poster">${posterHTML(entry)}</div><div class="detail-copy"><span class="detail-year">${[entry.year, ...(entry.genres || [])].filter(Boolean).map(escapeHTML).join(' · ')}</span><h2>${escapeHTML(entry.title)}</h2><p class="detail-watch">${seasonLabel(entry)} · ${entry.status === 'unfinished' ? 'Unfinished' : 'Watched'}${entry.watch === 'rewatch' ? ' · ↻ Rewatch' : ''}<br>Logged ${escapeHTML(watchLabel(entry))}</p><div class="entry-tags">${tagsHTML(entry)}</div>${entry.notes ? `<p class="detail-note">${escapeHTML(entry.notes)}</p>` : ''}${others.length ? `<div class="other-viewings"><h3>Also in the diary</h3>${others.map(other => `<p>${escapeHTML(watchLabel(other))} · ${seasonLabel(other)}${other.watch === 'rewatch' ? ' · ↻ Rewatch' : ''}${other.status === 'unfinished' ? ' · Unfinished' : ''}</p>`).join('')}</div>` : ''}<p class="detail-summary">${escapeHTML(entry.summary || '')}</p>${entry.url ? `<a class="detail-link" href="${escapeHTML(entry.url)}" target="_blank" rel="noopener noreferrer">More on ${escapeHTML(entry.source || 'TVmaze')} ↗</a><p class="detail-credit">Summary &amp; poster via ${escapeHTML(entry.source || 'TVmaze')}.</p>` : ''}</div></div>`;
+  const history = [...state.entries.filter(other => other.showId === entry.showId)].sort((a,b) => b.watched.localeCompare(a.watched));
+  const sourceLinks = [entry.url ? `<a class="detail-link" href="${escapeHTML(entry.url)}" target="_blank" rel="noopener noreferrer">TMDB ↗</a>` : '', entry.letterboxd ? `<a class="detail-link" href="${escapeHTML(entry.letterboxd)}" target="_blank" rel="noopener noreferrer">Letterboxd ↗</a>` : ''].join('');
+  $('#detail-content').innerHTML = `<div class="detail-layout"><div class="detail-poster">${posterHTML(entry)}</div><div class="detail-copy"><span class="detail-year">${[entry.year,...(entry.genres || [])].filter(Boolean).map(escapeHTML).join(' · ')}</span><h2>${escapeHTML(entry.title)}</h2><p class="detail-watch">${seasonLabel(entry)} · ${entry.status === 'unfinished' ? 'Unfinished' : 'Watched'}${entry.watch === 'rewatch' ? ' · ↻ Rewatch' : ''}<br>Logged ${escapeHTML(watchLabel(entry))}</p><div class="entry-tags">${tagsHTML(entry)}</div>${entry.notes ? `<p class="detail-note">${escapeHTML(entry.notes)}</p>` : ''}<div class="other-viewings"><h3>Viewing history</h3>${history.map(other => `<p>${escapeHTML(watchLabel(other))} · ${seasonLabel(other)}${other.watch === 'rewatch' ? ' · ↻ Rewatch' : ''}${other.status === 'unfinished' ? ' · Unfinished' : ''} ${editLink(other)}</p>`).join('')}</div><p class="detail-summary">${escapeHTML(entry.summary || '')}</p><div class="source-links">${sourceLinks}</div>${entry.url ? '<p class="detail-credit">Summary &amp; poster via TMDB.</p>' : ''}</div></div>`;
   $('#detail').showModal();
 }
-$('#entries').addEventListener('click', event => {
+$('#entries').addEventListener('click',event => {
   const tag = event.target.closest('[data-tag]');
   if (tag) { toggleTag(tag.dataset.tag); return; }
   const button = event.target.closest('[data-id]');
   if (button) openDetail(button.dataset.id);
 });
-$('#tag-filters').addEventListener('click', event => {
+$('#tag-filters').addEventListener('click',event => {
   const tag = event.target.closest('[data-tag]');
   if (tag) toggleTag(tag.dataset.tag);
   if (event.target.closest('[data-clear-tags]')) { state.tags.clear(); render(); }
 });
-$('#detail-content').addEventListener('click', event => {
-  const tag = event.target.closest('[data-tag]');
-  if (tag) { $('#detail').close(); toggleTag(tag.dataset.tag); }
-});
-$('#search').addEventListener('input', render);
-['year','status','watch','sort'].forEach(id => $(`#${id}`).addEventListener('change', render));
-document.querySelectorAll('[data-view]').forEach(button => button.addEventListener('click', () => { state.view = button.dataset.view; render(); }));
-$('#reset').addEventListener('click', () => {
-  $('#search').value = '';
-  ['year','status','watch'].forEach(key => $(`#${key}`).value = 'all');
-  state.tags.clear();
-  render();
-});
-$('.close-dialog').addEventListener('click', () => $('#detail').close());
-$('#detail').addEventListener('click', event => {
-  if (event.target === $('#detail')) {
-    const rect = $('#detail').getBoundingClientRect();
-    if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) $('#detail').close();
-  }
-});
+$('#detail-content').addEventListener('click',event => { const tag = event.target.closest('[data-tag]'); if (tag) { $('#detail').close(); toggleTag(tag.dataset.tag); } });
+$('#search').addEventListener('input',render);
+['year','status','watch','sort'].forEach(id => $(`#${id}`).addEventListener('change',render));
+document.querySelectorAll('[data-section]').forEach(button => button.addEventListener('click',() => setSection(button.dataset.section)));
+document.querySelectorAll('[data-view]').forEach(button => button.addEventListener('click',() => { state.view = button.dataset.view; state.views[state.mode] = state.view; render(); }));
+$('#reset').addEventListener('click',() => { $('#search').value = ''; ['year','status','watch'].forEach(key => $(`#${key}`).value = 'all'); state.tags.clear(); render(); });
+$('.close-dialog').addEventListener('click',() => $('#detail').close());
+$('#detail').addEventListener('click',event => { if (event.target === $('#detail')) { const r = $('#detail').getBoundingClientRect(); if (event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom) $('#detail').close(); } });
 async function init() {
   try {
     const response = await fetch('data/diary.json');
@@ -119,6 +146,8 @@ async function init() {
     $('#total-series').textContent = new Set(state.entries.map(entry => entry.showId)).size;
     $('#total-viewings').textContent = state.entries.length;
     $('#total-rewatches').textContent = state.entries.filter(entry => entry.watch === 'rewatch').length;
+    $('#diary-count').textContent = state.entries.length;
+    $('#watched-count').textContent = new Set(state.entries.filter(entry => entry.status === 'watched').map(entry => entry.showId)).size;
     const firstYear = state.entries.map(entry => entry.watched.slice(0,4)).sort()[0];
     $('.profile span:last-child').textContent = firstYear ? `Since ${firstYear}` : 'A viewing diary';
     const latest = [...state.entries].sort((a,b) => b.watched.localeCompare(a.watched))[0];
@@ -126,13 +155,14 @@ async function init() {
     const params = new URLSearchParams(location.search);
     for (const key of ['year','status','watch','sort']) if ([...$(`#${key}`).options].some(option => option.value === params.get(key))) $(`#${key}`).value = params.get(key);
     $('#search').value = params.get('q') || '';
-    if (['list','diary'].includes(params.get('view'))) state.view = 'list';
+    if (params.get('section') === 'watched') state.mode = 'watched';
+    const layout = {cards:'large',grid:'large',diary:'list'}[params.get('view')] || params.get('view');
+    state.view = ['large','small','list'].includes(layout) ? layout : state.views[state.mode];
+    if (state.mode === 'watched' && state.view === 'list') state.view = 'large';
+    state.views[state.mode] = state.view;
     const knownTags = new Set(state.entries.flatMap(entry => entry.tags));
     state.tags = new Set(params.getAll('tag').filter(tag => knownTags.has(tag)));
     render();
-  } catch (error) {
-    $('#load-error').hidden = false;
-    console.error('Unable to load viewing diary:', error);
-  }
+  } catch (error) { $('#load-error').hidden = false; console.error('Unable to load viewing diary:',error); }
 }
 init();

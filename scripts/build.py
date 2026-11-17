@@ -80,6 +80,7 @@ def parse_year(path, catalogue, tmdb_cache=None):
                 title = show['title']
             else:
                 show = catalogue.get(title.casefold(), {})
+            title = show.get('title', title)
             is_movie = show.get('mediaType') == 'movie'
             if is_movie and seasons:
                 raise ValueError('Movie links do not have seasons; leave the Seasons cell blank')
@@ -89,34 +90,43 @@ def parse_year(path, catalogue, tmdb_cache=None):
             entries.append(dict(show, id=f'{year}-{number}', showId=show_id, title=title,
                                 watched=f'{year}-{month_number:02}' if month_number else year,
                                 seasons=season_numbers, allSeasons=seasons.lower() == 'all',
-                                watch=watch, status=status, tags=tag_list, notes=notes))
+                                watch=watch, status=status, tags=tag_list, notes=notes,
+                                editUrl=f'https://github.com/shadrunov/letterboxd-series/edit/main/diary/{year}.md#L{number}'))
         except ValueError as error:
             raise ValueError(f'{path.name}:{number}: {error}') from error
     return entries
 
 
 def load_diary(root=ROOT):
+    cache_path = root / '.cache/tmdb/catalogue.json'
+    tmdb_cache = json.loads(cache_path.read_text()) if cache_path.exists() else {}
     catalogue = {}
-    with (root / 'data/shows.csv').open(newline='') as file:
-        for row in csv.DictReader(file):
-            key = row['Series'].casefold()
-            if key in catalogue:
-                raise ValueError(f'Duplicate catalogue title: {row["Series"]}')
-            poster = row['Poster']
-            if poster and (not poster.startswith('assets/posters/') or not (root / poster).is_file()):
-                raise ValueError(f'Missing or invalid poster: {poster}')
-            url = row['URL']
-            if url and not url.startswith('https://www.tvmaze.com/shows/'):
-                raise ValueError(f'Invalid TVmaze URL: {url}')
-            catalogue[key] = dict(id=Path(poster).stem if poster else key,
-                                  year=int(row['Year']) if row['Year'] else None, source='TVmaze',
-                                  poster=poster, url=url, genres=[s.strip() for s in row['Genres'].split(',') if s.strip()],
-                                  summary=row['Summary'], imageSource=row['Image source'])
+    registry = root / 'data/shows.csv'
+    if registry.exists():
+        with registry.open(newline='') as file:
+            for row in csv.DictReader(file):
+                key = row['Series'].casefold()
+                if key in catalogue:
+                    raise ValueError(f'Duplicate catalogue title: {row["Series"]}')
+                reference = parse_reference(row.get('TMDB', ''))
+                if not reference:
+                    continue
+                if reference not in tmdb_cache:
+                    raise ValueError(f'TMDB {reference} is not cached. Run python3 scripts/import_tmdb.py first.')
+                show = dict(tmdb_cache[reference])
+                link = row.get('Letterboxd', '').strip()
+                if link:
+                    if not re.fullmatch(r'https://letterboxd\.com/film/[^/?#]+/', link):
+                        raise ValueError(f'Invalid Letterboxd page: {link}')
+                    show['letterboxd'] = link
+                catalogue[key] = show
     files = sorted((root / 'diary').glob('[0-9][0-9][0-9][0-9].md'), reverse=True)
     if not files:
         raise ValueError('No yearly diary files found')
-    cache_path = root / '.cache/tmdb/catalogue.json'
-    tmdb_cache = json.loads(cache_path.read_text()) if cache_path.exists() else {}
+    # Registry links also apply to entries using the TMDB URL directly.
+    for show in catalogue.values():
+        if show.get('letterboxd'):
+            tmdb_cache[show['id'].removeprefix('tmdb:')] = show
     entries = [entry for path in files for entry in parse_year(path, catalogue, tmdb_cache)]
     # Link earlier plain-title records to a later TMDB reference when unambiguous.
     by_title = {}

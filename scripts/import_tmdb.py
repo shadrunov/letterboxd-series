@@ -1,5 +1,7 @@
 """Fetch uncached TMDB titles and posters before building. No third-party packages."""
 import argparse
+import csv
+import unicodedata
 import getpass
 import json
 import os
@@ -10,7 +12,7 @@ import tempfile
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlsplit
 
 from build import ROOT, table_rows
 from tmdb import parse_reference, reference_url
@@ -20,10 +22,15 @@ CACHE = ROOT / '.cache/tmdb'
 
 def discover_references(root=ROOT):
     refs = set()
+    registry = root / 'data/shows.csv'
+    aliases = {}
+    if registry.exists():
+        with registry.open(newline='') as file:
+            aliases = {row['Series'].casefold(): row.get('TMDB', '') for row in csv.DictReader(file)}
     for path in (root / 'diary').glob('[0-9][0-9][0-9][0-9].md'):
         for number, cells in table_rows(path):
             try:
-                ref = parse_reference(cells[1])
+                ref = parse_reference(aliases.get(cells[1].casefold()) or cells[1])
             except ValueError as error:
                 raise ValueError(f'{path.name}:{number}: {error}') from error
             if ref:
@@ -71,6 +78,27 @@ def request_bytes(url, token=None):
             raise ValueError('Could not reach TMDB. Try the workflow again later.') from None
 
 
+def find_letterboxd(reference, title, year):
+    """Return a canonical page only when it identifies the same TMDB entity."""
+    kind, number = reference.split('/')
+    slug = re.sub(r'[^a-z0-9]+', '-', unicodedata.normalize('NFKD', title).encode('ascii', 'ignore').decode().lower()).strip('-')
+    candidates = [f'https://letterboxd.com/tmdb/{number}/'] if kind == 'movie' else [f'https://letterboxd.com/film/{slug}/', f'https://letterboxd.com/film/{slug}-{year}/']
+    for url in candidates:
+        try:
+            request = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urlopen(request, timeout=10) as response:
+                canonical = response.url
+                html = response.read(2 * 1024 * 1024).decode('utf-8', errors='replace')
+            if not re.fullmatch(r'https://letterboxd\.com/film/[^/?#]+/', canonical):
+                continue
+            ids = set(re.findall(r'themoviedb\.org/(tv|movie)/(\d+)', html))
+            if ids == {(kind, number)}:
+                return canonical
+        except (OSError, ValueError):
+            continue
+    return ''
+
+
 def fetch_metadata(reference, token, cache):
     kind, number = reference.split('/')
     data = json.loads(request_bytes(f'https://api.themoviedb.org/3/{reference}?language=en-US', token))
@@ -89,7 +117,8 @@ def fetch_metadata(reference, token, cache):
         (cache / 'posters').mkdir(parents=True, exist_ok=True)
         (cache / 'posters' / filename).write_bytes(request_bytes(image_url))
         poster = f'assets/posters/tmdb/{filename}'
-    return dict(id=f'tmdb:{reference}', title=title, year=int(date[:4]) if re.match(r'^\d{4}-', date) else None,
+    year = int(date[:4]) if re.match(r'^\d{4}-', date) else None
+    return dict(metadataVersion=2, letterboxd=find_letterboxd(reference, title, year), id=f'tmdb:{reference}', title=title, year=int(date[:4]) if re.match(r'^\d{4}-', date) else None,
                 mediaType=kind, poster=poster, url=reference_url(reference), source='TMDB',
                 genres=[genre['name'] for genre in data.get('genres', [])], summary=data.get('overview') or '',
                 imageSource=image_url, fetchedAt=time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()))
@@ -98,7 +127,7 @@ def fetch_metadata(reference, token, cache):
 def import_titles(root=ROOT, cache=CACHE, token=None, refresh=False):
     refs = discover_references(root)
     cached = read_cache(cache)
-    missing = [ref for ref in refs if refresh or ref not in cached or
+    missing = [ref for ref in refs if refresh or ref not in cached or cached[ref].get('metadataVersion') != 2 or
                (cached[ref].get('poster') and not (cache / 'posters' / Path(cached[ref]['poster']).name).is_file())]
     if missing and not token:
         raise ValueError('New TMDB links need a token. Add the Actions secret TMDB_READ_ACCESS_TOKEN, or run this script locally and enter your token at the hidden prompt.')

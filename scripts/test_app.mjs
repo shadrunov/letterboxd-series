@@ -8,7 +8,7 @@ const fixture = {
   years: ['2024', '2025', '2026'],
   entries: [
     { id: 'one', showId: 'royals', title: 'Young Royals', watched: '2025-10', seasons: [1, 2, 3], watch: 'watch', status: 'watched', tags: ['queer'], notes: '' },
-    { id: 'two', showId: 'royals', title: 'Young Royals', watched: '2026-01', seasons: [2, 3], watch: 'rewatch', status: 'watched', tags: ['queer', 'w/ alena ❤️'], notes: 'A repeat.' },
+    { id: 'two', showId: 'royals', title: 'Young Royals', watched: '2026-01', seasons: [2, 3], watch: 'rewatch', status: 'watched', tags: ['queer', 'w/ alena ❤️'], notes: 'A repeat.', url:'https://www.themoviedb.org/tv/125910', letterboxd:'https://letterboxd.com/film/fixture/' },
     { id: 'three', showId: 'royals', title: 'Young Royals', watched: '2026-01', seasons: [], allSeasons: true, watch: 'rewatch', status: 'unfinished', tags: ['queer'], notes: '' },
     { id: 'four', showId: 'new', title: 'A <New> Series', watched: '2026', seasons: [1], watch: 'watch', status: 'watched', tags: ['deutsch'], notes: '<b>personal</b>' },
   ],
@@ -46,26 +46,51 @@ assert.ok(html.includes('No viewings recorded yet.'));
 assert.ok(html.includes('A &lt;New&gt; Series'));
 assert.ok(!html.includes('<b>personal</b>'));
 assert.ok(html.includes('All seasons'));
+assert.ok(html.includes('diary-table'));
+assert.ok(html.includes('calendar-month'));
+assert.ok(!/<th[^>]*>(Day|Rating|Review)<\/th>/.test(html));
+assert.ok(html.includes('https://github.com/shadrunov/letterboxd-series/edit/main/diary/'));
 run("$('#watch').value = 'rewatch'; render()");
-assert.equal(get('#collection-count').textContent, 2);
+assert.equal(run('matchingEntries().length'), 2);
 run("$('#watch').value = 'all'; toggleTag('queer'); toggleTag('w/ alena ❤️')");
-assert.equal(get('#collection-count').textContent, 1);
+assert.equal(run('matchingEntries().length'), 1);
 assert.equal(JSON.stringify(new URLSearchParams(context.lastURL.split('?')[1]).getAll('tag')), JSON.stringify(['queer', 'w/ alena ❤️']));
 run("state.tags.clear(); $('#search').value = 'DEUTSCH'; state.view = 'list'; render()");
-assert.equal(get('#collection-count').textContent, 1);
+assert.equal(run('matchingEntries().length'), 1);
 assert.equal(get('#entries').className, 'year-groups view-list');
 run("$('#search').value = ''; $('#status').value = 'unfinished'; render()");
-assert.equal(get('#collection-count').textContent, 1);
+assert.equal(run('matchingEntries().length'), 1);
 run("openDetail('two')");
 assert.ok(get('#detail').open);
 assert.ok(get('#detail-content').innerHTML.includes('Oct 2025'));
 assert.ok(get('#detail-content').innerHTML.includes('All seasons'));
+assert.ok(get('#detail-content').innerHTML.includes('TMDB ↗'));
+assert.ok(get('#detail-content').innerHTML.includes('Letterboxd ↗'));
+assert.ok(!get('#detail-content').innerHTML.includes('TVmaze'));
 run("$('#status').value = 'all'; $('#search').value = 'nothing-here'; render()");
 assert.equal(get('#empty-state').hidden, false);
 run("$('#search').value = ''; $('#sort').value = 'oldest'; render()");
 html = get('#entries').innerHTML;
 assert.ok(html.indexOf('data-id="two"') < html.indexOf('data-id="four"')); // Unknown month last.
 const restored = await createHarness('?view=list&tag=queer&tag=w%2F+alena+%E2%9D%A4%EF%B8%8F');
-assert.equal(restored.get('#collection-count').textContent, 1);
+assert.equal(restored.run('matchingEntries().length'), 1);
 assert.equal(restored.get('#entries').className, 'year-groups view-list');
+run("$('#sort').value = 'newest'; setSection('watched')");
+html = get('#entries').innerHTML;
+assert.equal(get('#entries').className, 'watched-collection view-large');
+assert.equal((html.match(/class="viewing /g) || []).length, 2);
+assert.ok(!html.includes('heading-2026'));
+assert.ok(!html.includes('diary-table'));
+assert.ok(html.includes('2 viewings'));
+assert.ok(html.includes('S1 · S2 · S3'));
+run("state.view = 'small'; state.views.watched = 'small'; render()");
+assert.equal(get('#entries').className, 'watched-collection view-small');
+run("setSection('diary')");
+assert.equal(get('#entries').className, 'year-groups view-list');
+run("state.view = 'large'; render()");
+assert.equal(get('#entries').className, 'year-groups view-large');
+run("state.view = 'small'; render()");
+assert.equal(get('#entries').className, 'year-groups view-small');
+const watchedListURL = await createHarness('?section=watched&view=list');
+assert.equal(watchedListURL.get('#entries').className, 'watched-collection view-large');
 console.log('Passed app checks: year groups, compact views, unique/viewing/rewatch totals, tags, filters, URL restoration, escaping, repeat history, unknown months.');
