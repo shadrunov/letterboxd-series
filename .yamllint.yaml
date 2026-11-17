@@ -1,0 +1,13 @@
+extends: default
+
+rules:
+  document-start: disable
+  line-length: disable  # URLs and personal notes can be long.
+  empty-lines: disable  # Formatter normalizes these outside multiline notes.
+  indentation:
+    spaces: 2
+    indent-sequences: consistent
+  comments:
+    min-spaces-from-content: 1
+  truthy:
+    check-keys: false  # GitHub Actions uses the key "on".

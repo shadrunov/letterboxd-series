@@ -13,7 +13,7 @@ Edit [`diary/2026.yaml`](diary/2026.yaml) and add a list element:
   tags: [queer, in darmstadt]
 ```
 
-Commit to `main`. GitHub Actions fetches the TMDB information, fills in `name`, commits that change back to the YAML, and publishes the site. Afterwards the same entry reads:
+Commit to `main`. GitHub Actions fetches the TMDB information, fills in `name`, sorts and formats the YAML, commits those changes back, and publishes the site. Afterwards the same entry reads:
 
 ```yaml
 - url: https://www.themoviedb.org/tv/124834
@@ -23,7 +23,7 @@ Commit to `main`. GitHub Actions fetches the TMDB information, fills in `name`, 
   tags: [queer, in darmstadt]
 ```
 
-The examples are illustrative; they are not extra diary records. **You only need to enter the URL, date, seasons, and tags.** Names are maintained automatically. Comments, formatting, and the other fields are preserved when names are inserted or updated. JSON is generated internally; you never need to edit it.
+The examples are illustrative; they are not extra diary records. **You only need to enter the URL, date, seasons, and tags.** Names are maintained automatically. Comments and viewing details are preserved. The action sorts entries newest first, keeps the existing order for equal dates, and standardizes field order, two-space indentation, and compact season/tag lists. JSON is generated internally; you never need to edit it.
 
 Each year has its own YAML file. Add `diary/2024.yaml` with the same list format to add another year. An empty year uses `[]`. Diary edit links on the site open the corresponding YAML file on GitHub.
 
@@ -94,19 +94,22 @@ Open a title or poster for its synopsis, viewing history, season release years a
 
 ## Publishing
 
-Pushes to `main` import uncached TMDB records, enrich names, validate YAML, run tests, build, commit changed YAML names, and deploy through GitHub Pages. The repository’s configured **TMDB_READ_ACCESS_TOKEN** secret accepts a read token or v3 API key. Credentials are used only on the build runner.
+Pushes to `main` import uncached TMDB records, enrich names, sort and format diary files, lint YAML, run tests, build, commit changed YAML, and deploy through GitHub Pages. The repository’s configured **TMDB_READ_ACCESS_TOKEN** secret accepts a read token or v3 API key. Credentials are used only on the build runner.
 
-Only YAML name changes are committed by the bot, after successful checks. The workflow uses the standard `GITHUB_TOKEN` and a `[skip ci]` commit to avoid recursion. A normal push protects concurrent edits: it never force-pushes or overwrites a newer user commit.
+Only diary YAML changes are committed by the bot, after successful checks. The workflow uses the standard `GITHUB_TOKEN` and a `[skip ci]` commit to avoid recursion. A normal push protects concurrent edits: it never force-pushes or overwrites a newer user commit.
 
 Metadata and posters use Actions cache; the published page embeds its diary data and versions script/style URLs by content. The static site needs no server or runtime API calls. To refresh metadata and recheck Letterboxd links, use **Actions → Deploy GitHub Pages → Run workflow → Refresh all referenced TMDB metadata and posters**.
 
 ## Local preview
 
-Python 3 and PyYAML:
+Python 3:
 
 ```sh
+python3 -m venv .venv
+source .venv/bin/activate
 python3 -m pip install -r requirements.txt
 python3 scripts/import_tmdb.py --write-names
+python3 scripts/format_diary.py
 python3 scripts/build.py
 python3 -m http.server 8000 --directory _site
 ```
@@ -114,6 +117,8 @@ python3 -m http.server 8000 --directory _site
 The importer asks for a credential with a hidden prompt if uncached links need fetching, or accepts the `TMDB_READ_ACCESS_TOKEN` environment variable. Rebuild after editing YAML, then refresh http://localhost:8000. `.cache/` and `_site/` are ignored by Git.
 
 ```sh
+python3 scripts/format_diary.py --check
+python3 -m yamllint --strict -c .yamllint.yaml diary .github/workflows/pages.yml .yamllint.yaml
 python3 scripts/check.py
 python3 -m unittest discover -s scripts -p 'test_*.py'
 node scripts/test_app.mjs

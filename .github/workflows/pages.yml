@@ -71,7 +71,12 @@ jobs:
           else
             python3 scripts/import_tmdb.py --write-names
           fi
-      - name: Validate diary tables and run tests
+      - name: Sort, format, and lint YAML
+        run: |
+          python3 scripts/format_diary.py
+          python3 -m yamllint --strict -c .yamllint.yaml diary .github/workflows/pages.yml .yamllint.yaml
+          python3 scripts/format_diary.py --check
+      - name: Validate diary records and run tests
         run: |
           python3 scripts/check.py
           python3 -m unittest discover -s scripts -p 'test_*.py'
@@ -79,7 +84,7 @@ jobs:
         run: node scripts/test_app.mjs
       - name: Build static site
         run: python3 scripts/build.py
-      - name: Save fetched names to YAML
+      - name: Save names and formatted YAML
         if: ${{ github.ref == 'refs/heads/main' }}
         run: |
           if git diff --quiet -- diary; then
@@ -88,7 +93,7 @@ jobs:
           git add -- diary/*.yaml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Fill TMDB names in diary [skip ci]"
+          git commit -m "Update diary names and formatting [skip ci]" -m "Co-authored-by: Codex <noreply@openai.com>"
           git push origin HEAD:main
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

@@ -69,8 +69,8 @@ def date_text(value, year):
     return value
 
 
-def read_document(path):
-    text = path.read_text()
+def read_document(path, text=None):
+    text = path.read_text() if text is None else text
     loader = DiaryLoader(text)
     try:
         node = loader.get_single_node()
