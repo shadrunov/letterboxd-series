@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#14181c">
+  <meta name="description" content="Aleksei’s series diary. A personal collection of television watched, season by season, year by year.">
+  <title>Series • Aleksei’s viewing diary</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#collection">Skip to series</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="wordmark" href="./" aria-label="Series home"><span class="brand-dots" aria-hidden="true"><i></i><i></i><i></i></span>series<span class="wordmark-dot">.</span></a>
+      <span class="header-note">A PERSONAL VIEWING DIARY</span>
+      <a class="github-link" href="https://github.com/shadrunov/letterboxd-series" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span></a>
+    </div>
+  </header>
+  <main>
+    <section class="intro" aria-labelledby="page-title">
+      <div class="intro-copy"><p class="eyebrow"><span class="live-dot"></span> THE SMALL SCREEN, OVER THE YEARS</p><h1 id="page-title">One more episode.</h1><p class="lede">Aleksei’s little corner of television.<br>The stories I’ve spent time with, season by season.</p><div class="profile"><span class="avatar" aria-hidden="true">a</span><span>Curated by <strong>Aleksei</strong></span><span class="profile-divider">/</span><span>Since 2026</span></div></div>
+      <div class="poster-stack" aria-hidden="true"><img src="assets/posters/young-royals.jpg" alt=""><img src="assets/posters/heated-rivalry.jpg" alt=""><img src="assets/posters/interview-with-the-vampire.jpg" alt=""></div>
+    </section>
+    <section class="overview" aria-label="Viewing statistics">
+      <div class="stats"><div><strong id="total-series">9</strong><span>SERIES LOGGED</span></div><div><strong id="total-seasons">12</strong><span>SEASONS LOGGED</span></div><div><strong id="total-years">1</strong><span>YEAR OF STORIES</span></div></div>
+      <div class="latest"><span class="eyebrow">LAST LOGGED</span><span id="latest-title">Interview with the Vampire <small>Nov 2026</small></span></div>
+    </section>
+    <section id="collection" class="collection" aria-labelledby="collection-title">
+      <div class="collection-nav"><h2 id="collection-title">The collection <span id="collection-count">9</span></h2><div class="view-switch" role="group" aria-label="Collection view"><button type="button" data-view="grid" aria-pressed="true"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1h5v5H1zm9 0h5v5h-5zM1 10h5v5H1zm9 0h5v5h-5z"/></svg>Posters</button><button type="button" data-view="diary" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1 2h2v2H1zm5 0h9v2H6zM1 7h2v2H1zm5 0h9v2H6zM1 12h2v2H1zm5 0h9v2H6z"/></svg>Diary</button></div></div>
+      <div class="toolbar"><div class="filters"><label class="select-wrap"><span class="sr-only">Watch year</span><select id="year"><option value="all">All years</option></select></label><label class="select-wrap"><span class="sr-only">Viewing status</span><select id="status"><option value="all">All entries</option><option value="watched">Watched</option><option value="unfinished">Unfinished</option></select></label></div><div class="search-sort"><label class="search-wrap"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="5.5"/><path d="m12 12 5 5"/></svg><span class="sr-only">Search series</span><input type="search" id="search" placeholder="Find a series…" autocomplete="off"></label><label class="select-wrap sort-wrap"><span class="sr-only">Sort series</span><select id="sort"><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="title">Title A–Z</option></select></label></div></div>
+      <p class="results-label" id="results-label" aria-live="polite"></p>
+      <div id="entries" class="poster-grid"></div>
+      <div id="empty-state" hidden><span aria-hidden="true">↳</span><h3>No series found.</h3><p>Try another title or open up your filters.</p><button type="button" id="reset">Clear filters</button></div>
+      <noscript><p>This diary needs JavaScript to display its entries. You can also <a href="data/series.json">read the viewing data</a>.</p></noscript>
+      <p id="load-error" hidden>Couldn’t load the collection. Please refresh the page.</p>
+    </section>
+    <section class="year-section" aria-labelledby="year-heading"><div><p class="eyebrow">A YEAR IN EPISODES</p><h2 id="year-heading">Every month, a different story.</h2><p>Series logged by month. A small record of time well spent.</p></div><div id="year-chart" class="year-chart" aria-label="Monthly viewing activity"></div></section>
+    <footer><a class="footer-brand" href="./"><span class="brand-dots small" aria-hidden="true"><i></i><i></i><i></i></span>series.</a><p>A personal diary. Inspired by Letterboxd. Unaffiliated.</p><p>Posters &amp; metadata: <a href="https://www.tvmaze.com/" target="_blank" rel="noopener noreferrer">TVmaze</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA</a></p></footer>
+  </main>
+  <dialog id="detail"><button class="close-dialog" type="button" aria-label="Close series details">×</button><div id="detail-content"></div></dialog>
+</body>
+</html>
