@@ -1,6 +1,5 @@
-"""Fetch uncached TMDB titles and posters before building. No third-party packages."""
+"""Fetch uncached TMDB titles and posters before building."""
 import argparse
-import csv
 import unicodedata
 import getpass
 import json
@@ -14,28 +13,15 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from urllib.parse import urlencode, urlsplit
 
-from build import ROOT, table_rows
+from build import ROOT
+from diary import diary_files, read_document, fill_names
 from tmdb import parse_reference, reference_url
 
 CACHE = ROOT / '.cache/tmdb'
 
 
 def discover_references(root=ROOT):
-    refs = set()
-    registry = root / 'data/shows.csv'
-    aliases = {}
-    if registry.exists():
-        with registry.open(newline='') as file:
-            aliases = {row['Series'].casefold(): row.get('TMDB', '') for row in csv.DictReader(file)}
-    for path in (root / 'diary').glob('[0-9][0-9][0-9][0-9].md'):
-        for number, cells in table_rows(path):
-            try:
-                ref = parse_reference(aliases.get(cells[1].casefold()) or cells[1])
-            except ValueError as error:
-                raise ValueError(f'{path.name}:{number}: {error}') from error
-            if ref:
-                refs.add(ref)
-    return sorted(refs)
+    return sorted({parse_reference(row['url']) for path in diary_files(root) for _, row, _ in read_document(path)[1]})
 
 
 def read_cache(cache):
@@ -69,7 +55,7 @@ def request_bytes(url, token=None):
             if error.code in (401, 403):
                 raise ValueError('TMDB authentication failed. Check TMDB_READ_ACCESS_TOKEN.') from None
             if error.code == 404:
-                raise ValueError('TMDB title not found. Check the link in your diary table.') from None
+                raise ValueError('TMDB title not found. Check the link in your diary YAML.') from None
             raise ValueError(f'TMDB request failed (HTTP {error.code})') from None
         except URLError:
             if attempt < 2:
@@ -132,7 +118,7 @@ def fetch_metadata(reference, token, cache):
                 imageSource=image_url, fetchedAt=time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()))
 
 
-def import_titles(root=ROOT, cache=CACHE, token=None, refresh=False):
+def import_titles(root=ROOT, cache=CACHE, token=None, refresh=False, write_names=False):
     refs = discover_references(root)
     cached = read_cache(cache)
     missing = [ref for ref in refs if refresh or ref not in cached or cached[ref].get('metadataVersion') != 3 or
@@ -147,12 +133,15 @@ def import_titles(root=ROOT, cache=CACHE, token=None, refresh=False):
         temporary = cache / 'catalogue.json.tmp'
         temporary.write_text(json.dumps(cached, indent=2, ensure_ascii=False) + '\n')
         temporary.replace(cache / 'catalogue.json')
+    if write_names:
+        print(f'Updated {fill_names(root, cached)} YAML name fields.')
     print(f'TMDB: {len(refs)} titles referenced, {len(missing)} fetched, {len(refs) - len(missing)} cached.')
     return cached
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--write-names', action='store_true', help='Fill TMDB names in the yearly YAML files')
     parser.add_argument('--refresh', action='store_true', help='Fetch referenced titles again, including their posters')
     parser.add_argument('--check-url', help='Fetch one TMDB link into temporary storage to verify API access, without adding a viewing')
     args = parser.parse_args()
@@ -173,7 +162,7 @@ def main():
                 result = fetch_metadata(reference, token, Path(directory))
                 print(f'Verified TMDB {reference}: {result["title"]}; ' + ('poster downloaded.' if result['poster'] else 'no poster available.'))
         else:
-            import_titles(token=token, refresh=args.refresh)
+            import_titles(token=token, refresh=args.refresh, write_names=args.write_names)
     except (ValueError, OSError) as error:
         print(f'Import failed: {error}', file=sys.stderr)
         return 1

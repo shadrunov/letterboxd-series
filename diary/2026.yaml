@@ -1,0 +1,47 @@
+# One entry per viewing. Names are filled in by GitHub Actions.
+
+- url: https://www.themoviedb.org/tv/301507
+  date: 2026-01
+  seasons: [1]
+  tags: []
+
+- url: https://www.themoviedb.org/tv/223440
+  date: 2026-02
+  seasons: [1]
+  tags: []
+
+- url: https://www.themoviedb.org/tv/62722
+  date: 2026-03
+  seasons: [1]
+  tags: []
+  status: unfinished
+
+- url: https://www.themoviedb.org/tv/245159
+  date: 2026-06
+  seasons: [1]
+  tags: []
+
+- url: https://www.themoviedb.org/tv/124834
+  date: 2026-07
+  seasons: [3]
+  tags: []
+
+- url: https://www.themoviedb.org/tv/210107
+  date: 2026-08
+  seasons: [1]
+  tags: []
+
+- url: https://www.themoviedb.org/tv/212462
+  date: 2026-08
+  seasons: [1]
+  tags: []
+
+- url: https://www.themoviedb.org/tv/125910
+  date: 2026-10
+  seasons: [1, 2, 3]
+  tags: []
+
+- url: https://www.themoviedb.org/tv/128098
+  date: 2026-11
+  seasons: [1, 2]
+  tags: []

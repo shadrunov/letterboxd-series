@@ -5,7 +5,7 @@ const state = { entries: [], years: [], mode: 'diary', view: 'list', views: {dia
 const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[c]));
 const seasonLabel = entry => entry.mediaType === 'movie' ? 'Film' : entry.allSeasons ? 'All seasons' : entry.seasons.map(n => `S${n}`).join(' · ');
 const watchLabel = entry => entry.watched.length === 4 ? `${entry.watched} · month not recorded` : `${months[Number(entry.watched.slice(5)) - 1]} ${entry.watched.slice(0, 4)}`;
-const editURL = entry => entry.editUrl || `https://github.com/shadrunov/letterboxd-series/edit/main/diary/${entry.watched.slice(0,4)}.md`;
+const editURL = entry => entry.editUrl || `https://github.com/shadrunov/letterboxd-series/edit/main/diary/${entry.watched.slice(0,4)}.yaml`;
 const editLink = entry => `<a class="edit-entry" href="${escapeHTML(editURL(entry))}" target="_blank" rel="noopener noreferrer" aria-label="Edit ${escapeHTML(entry.title)} viewing on GitHub" title="Edit on GitHub">✎</a>`;
 const tagsHTML = entry => entry.tags.map(tag => `<button class="tag" type="button" data-tag="${escapeHTML(tag)}" aria-pressed="${state.tags.has(tag)}">${escapeHTML(tag)}</button>`).join('');
 function posterHTML(entry) {
@@ -86,7 +86,7 @@ function render() {
     $('#entries').className = `year-groups view-${state.view}`;
     const groups = state.years.filter(year => $('#year').value === 'all' || year === $('#year').value).map(year => ({year, entries:sortEntries(entries.filter(entry => entry.watched.startsWith(year)))})).filter(group => group.entries.length || !hasFilters);
     $('#entries').innerHTML = state.view === 'list' ? (groups.length ? diaryTable(groups) : '') : groups.map(({year, entries:group}) => {
-      return `<section class="year-group" aria-labelledby="heading-${year}"><div class="year-heading"><div><h3 id="heading-${year}">${year}</h3><span>${group.length} ${group.length === 1 ? 'viewing' : 'viewings'}</span></div><a href="https://github.com/shadrunov/letterboxd-series/edit/main/diary/${year}.md" target="_blank" rel="noopener noreferrer">Edit year ↗</a></div>${group.length ? `<div class="year-entries">${group.map(entry => cardHTML(entry)).join('')}</div>` : '<p class="empty-year">No viewings recorded yet.</p>'}</section>`;
+      return `<section class="year-group" aria-labelledby="heading-${year}"><div class="year-heading"><div><h3 id="heading-${year}">${year}</h3><span>${group.length} ${group.length === 1 ? 'viewing' : 'viewings'}</span></div><a href="https://github.com/shadrunov/letterboxd-series/edit/main/diary/${year}.yaml" target="_blank" rel="noopener noreferrer">Edit year ↗</a></div>${group.length ? `<div class="year-entries">${group.map(entry => cardHTML(entry)).join('')}</div>` : '<p class="empty-year">No viewings recorded yet.</p>'}</section>`;
     }).join('');
     $('#results-label').textContent = `${entries.length} ${entries.length === 1 ? 'viewing' : 'viewings'} · ${new Set(entries.map(entry => entry.showId)).size} series${state.tags.size > 1 ? ' · Matching all selected tags' : ''}`;
   }

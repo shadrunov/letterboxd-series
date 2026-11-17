@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest.mock import patch
 from build import parse_year, load_diary
 from import_tmdb import discover_references, fetch_metadata, import_titles, request_bytes, find_letterboxd
-from test_diary import HEADER
+from test_diary import write_diary, viewing
 from tmdb import parse_reference
 
 
@@ -18,8 +18,7 @@ class TMDBTest(unittest.TestCase):
 
     def root(self, directory, rows):
         root = Path(directory)
-        (root / 'diary').mkdir()
-        (root / 'diary/2026.md').write_text(HEADER + rows)
+        write_diary(root, rows)
         return root
 
     def test_url_canonicalization(self):
@@ -51,8 +50,7 @@ class TMDBTest(unittest.TestCase):
 
     def test_discovery_fetches_each_title_once(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = self.root(directory, '| Jan | https://www.themoviedb.org/tv/124834 | 1 | watch | watched | | |\n'
-                             '| Oct | https://www.themoviedb.org/tv/124834-heartstopper | all | rewatch | watched | | |\n')
+            root = self.root(directory, [viewing(url='https://www.themoviedb.org/tv/124834'), viewing(url='https://www.themoviedb.org/tv/124834-heartstopper', date='2026-10', seasons='all', rewatch=True)])
             self.assertEqual(discover_references(root), ['tv/124834'])
             with patch('import_tmdb.fetch_metadata', return_value={'metadataVersion': 3, 'title': 'Heartstopper', 'poster': ''}) as fetch:
                 import_titles(root, root / 'cache', token='fixture-token')
@@ -63,7 +61,7 @@ class TMDBTest(unittest.TestCase):
 
     def test_new_links_need_token_and_leave_no_partial_catalogue(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = self.root(directory, '| Jan | https://www.themoviedb.org/tv/124834 | 1 | watch | watched | | |\n')
+            root = self.root(directory, [viewing(url='https://www.themoviedb.org/tv/124834')])
             with self.assertRaisesRegex(ValueError, 'TMDB_READ_ACCESS_TOKEN'):
                 import_titles(root, root / 'cache')
             self.assertFalse((root / 'cache/catalogue.json').exists())
@@ -101,7 +99,7 @@ class TMDBTest(unittest.TestCase):
 
     def test_missing_poster_reimports_and_refresh_reimports(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = self.root(directory, '| Jan | https://www.themoviedb.org/tv/124834 | 1 | watch | watched | | |\n')
+            root = self.root(directory, [viewing(url='https://www.themoviedb.org/tv/124834')])
             cache = root / 'cache'
             cache.mkdir()
             (cache / 'catalogue.json').write_text(json.dumps({'tv/124834': {'poster': 'assets/posters/tmdb/tv-124834.jpg'}}))
@@ -115,35 +113,25 @@ class TMDBTest(unittest.TestCase):
     def test_movie_uses_movie_endpoint_and_blank_seasons(self):
         payload = {'id': 1751639, 'title': 'Fixture Film', 'release_date': '', 'poster_path': None}
         with tempfile.TemporaryDirectory() as directory:
-            root = self.root(directory, '| Jan | https://www.themoviedb.org/movie/1751639/ | | rewatch | watched | queer | |\n')
+            root = self.root(directory, [viewing(url='https://www.themoviedb.org/movie/1751639/', seasons=[], rewatch=True, tags=['queer'])])
             with patch('import_tmdb.request_bytes', return_value=json.dumps(payload).encode()) as request:
                 metadata = fetch_metadata('movie/1751639', 'fixture-token', root / 'cache')
             self.assertIn('/3/movie/1751639?', request.call_args.args[0])
-            entries = parse_year(root / 'diary/2026.md', {}, {'movie/1751639': metadata})
+            entries = parse_year(root / 'diary/2026.yaml', {'movie/1751639': metadata})
             self.assertEqual(entries[0]['title'], 'Fixture Film')
             self.assertEqual(entries[0]['seasons'], [])
             self.assertEqual(entries[0]['mediaType'], 'movie')
 
-    def test_existing_plain_title_and_tmdb_rewatch_share_identity(self):
+    def test_yaml_name_writeback_reuses_cached_titles_without_token(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = self.root(directory, '| Jan | Heartstopper | 3 | watch | watched | | |\n'
-                             '| Sep | https://www.themoviedb.org/tv/124834 | all | rewatch | watched | | |\n')
-            (root / 'data').mkdir()
-            (root / 'data/shows.csv').write_text('Series,Year,Poster,URL,Genres,Summary,Image source\n')
-            (root / '.cache/tmdb').mkdir(parents=True)
-            (root / '.cache/tmdb/catalogue.json').write_text(json.dumps({
-                'tv/124834': {'id': 'tmdb:tv/124834', 'source': 'TMDB', 'title': 'Heartstopper', 'poster': ''}
-            }))
-            entries = load_diary(root)['entries']
-            self.assertEqual(entries[0]['showId'], entries[1]['showId'])
-            self.assertNotEqual(entries[0]['id'], entries[1]['id'])
-
-    def test_registry_titles_discover_tmdb_references(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = self.root(directory, '| Jan | Heartstopper | 1 | watch | watched | | |\n')
-            (root / 'data').mkdir()
-            (root / 'data/shows.csv').write_text('Series,TMDB,IMDb,Letterboxd\nHeartstopper,https://www.themoviedb.org/tv/124834,,\n')
-            self.assertEqual(discover_references(root), ['tv/124834'])
+            root = self.root(directory, [viewing(url='https://www.themoviedb.org/tv/124834')])
+            cache = root / 'cache'
+            cache.mkdir()
+            (cache / 'catalogue.json').write_text(json.dumps({'tv/124834': {'metadataVersion':3, 'title':'Heartstopper', 'poster':''}}))
+            with patch('import_tmdb.fetch_metadata') as fetch:
+                import_titles(root, cache, write_names=True)
+                fetch.assert_not_called()
+            self.assertIn('name: "Heartstopper"', (root / 'diary/2026.yaml').read_text())
 
     def test_letterboxd_rejects_same_title_with_different_tmdb_id(self):
         from unittest.mock import MagicMock
@@ -159,9 +147,9 @@ class TMDBTest(unittest.TestCase):
 
     def test_uncached_reference_reports_location(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = self.root(directory, '| Jan | https://www.themoviedb.org/tv/124834 | 1 | watch | watched | | |\n')
-            with self.assertRaisesRegex(ValueError, r'2026.md:3:.*not cached'):
-                parse_year(root / 'diary/2026.md', {})
+            root = self.root(directory, [viewing(url='https://www.themoviedb.org/tv/124834')])
+            with self.assertRaisesRegex(ValueError, r'2026.yaml:1:.*not cached'):
+                parse_year(root / 'diary/2026.yaml', {})
 
 
 if __name__ == '__main__':

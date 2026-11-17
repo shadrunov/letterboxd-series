@@ -1,85 +1,88 @@
 # Series
 
-[Aleksei’s series diary](https://shadrunov.github.io/letterboxd-series/) — a static, personal viewing history inspired by Letterboxd.
+[Aleksei’s series diary](https://shadrunov.github.io/letterboxd-series/) — a personal viewing history inspired by Letterboxd.
+
+## Add a viewing
+
+Edit [`diary/2026.yaml`](diary/2026.yaml) and add a list element:
+
+```yaml
+- url: https://www.themoviedb.org/tv/124834
+  date: 2026-07
+  seasons: [3]
+  tags: [queer, in darmstadt]
+```
+
+Commit to `main`. GitHub Actions fetches the TMDB information, fills in `name`, commits that change back to the YAML, and publishes the site. Afterwards the same entry reads:
+
+```yaml
+- url: https://www.themoviedb.org/tv/124834
+  name: "Heartstopper"
+  date: 2026-07
+  seasons: [3]
+  tags: [queer, in darmstadt]
+```
+
+The examples are illustrative; they are not extra diary records. **You only need to enter the URL, date, seasons, and tags.** Names are maintained automatically. Comments, formatting, and the other fields are preserved when names are inserted or updated. JSON is generated internally; you never need to edit it.
+
+Each year has its own YAML file. Add `diary/2024.yaml` with the same list format to add another year. An empty year uses `[]`, as in [`2025.yaml`](diary/2025.yaml). Diary edit links on the site open the corresponding YAML file on GitHub.
+
+### Fields
+
+| Field | Format |
+| --- | --- |
+| `url` | TMDB `/tv/…` or `/movie/…` URL; required |
+| `name` | Added or updated by the action from TMDB |
+| `date` | `2026-07`, `2026-07-15`, or just `2026`; must match the file’s year |
+| `seasons` | `[1, 2, 3]`, a single number, `"1-3"`, or `all`; omit for movies |
+| `tags` | A list such as `[queer, deutsch, "w/ alena ❤️"]`; defaults to `[]` |
+| `rewatch` | `true` for a repeat viewing; defaults to `false` |
+| `status` | `watched` (default) or `unfinished` |
+| `notes` | Optional personal notes |
+
+Full dates are preserved in YAML, while the public diary displays only their month. Unknown months can be recorded as a year alone. YAML duplicate keys, misplaced years, invalid dates, unknown fields, and invalid season ranges fail validation before anything is published.
+
+One list element is one viewing. To rewatch selected seasons, add another element with the same URL and `rewatch: true`. This works in the same year, month, or a different year:
+
+```yaml
+- url: https://www.themoviedb.org/tv/125910
+  date: 2026-10
+  seasons: [2, 3]
+  tags: [queer]
+  rewatch: true
+```
+
+Use `seasons: all` for a complete-series rewatch. Use `status: unfinished` if you did not finish it. A green eye marks completed season viewings, with a total counter when watched more than once. Unfinished entries do not count. Complete-series entries count regular seasons released by the logged month/year, without inferring future seasons, specials, or seasons with unknown release dates.
 
 ## Browse
 
-- **Diary:** every viewing, including rewatches and unfinished entries, grouped by year. Choose **Large cards** (five per desktop row), **Small cards** (eight), or **List**. The list has year-only calendars, a separate month column, titles, release years, seasons, rewatch markers, and GitHub edit links. Compact text dropdowns sit directly above the entries. It has no day, rating, or review column.
-- **Watched:** one card per series with a completed viewing, across all years. Rewatches are combined, watched seasons and tags are collected, and the latest watch month is shown. Choose large or small cards. Unfinished-only series remain in the diary.
+- **Diary:** every viewing, grouped by year. Large cards (five per desktop row), small cards (eight), or a list with year-only calendars and a separate month column. The list has no day, rating, or review column.
+- **Watched:** one card per series with a completed viewing, across all years. Rewatches are combined. Choose large or small cards.
 
-Open a poster or title for its synopsis, complete viewing history, TMDB page, and a verified Letterboxd page when available. Below the details, a seasons list shows release years, episode counts, optional synopses, and links to individual seasons; specials appear last. Unknown dates and episode counts are marked explicitly. A green eye marks seasons with completed viewings, with a total-watch counter when watched more than once. Unfinished entries do not count. Complete-series entries count regular seasons released by the logged month (or year when the month is unknown); future seasons, specials, and seasons with unknown release dates are not inferred from `all`. Search, tags, year, watch type, layout, and section are shareable in the URL.
+Search is at the top right. Filters sit directly above the entries. Search, tags, year, watch type, layout, and section are shareable in the URL. Select multiple tags to match all of them on a viewing. Search also matches notes.
 
-## Edit the diary
+Open a title or poster for its synopsis, viewing history, season release years and episode counts, TMDB links, and verified Letterboxd links when available. All metadata and posters come from TMDB. [`data/shows.csv`](data/shows.csv) contains optional verified Letterboxd links; new YAML entries do not need catalogue rows.
 
-Open [2026](diary/2026.md) or [2025](diary/2025.md). GitHub displays each file as a readable table. Click the pencil to edit, add a row, and commit to `main`. **Edit year** and each diary entry’s pencil also lead to the corresponding file on GitHub.
+## Publishing
 
-Each year is a separate Markdown file in [`diary/`](diary/). Copy its table into `2024.md`, for example, to add that year. New files appear automatically, newest year first. No JSON editing is needed.
+Pushes to `main` import uncached TMDB records, enrich names, validate YAML, run tests, build, commit changed YAML names, and deploy through GitHub Pages. The repository’s configured **TMDB_READ_ACCESS_TOKEN** secret accepts a read token or v3 API key. Credentials are used only on the build runner.
 
-| Month | Series | Seasons | Watch | Status | Tags | Notes |
-| --- | --- | --- | --- | --- | --- | --- |
-| Jan | Young Royals | 1-3 | watch | watched | queer, in darmstadt | |
-| Sep | Young Royals | 2, 3 | rewatch | watched | w/ friends | |
-| Nov | Young Royals | all | rewatch | watched | queer | The whole series again. |
+Only YAML name changes are committed by the bot, after successful checks. The workflow uses the standard `GITHUB_TOKEN` and a `[skip ci]` commit to avoid recursion. A normal push protects concurrent edits: it never force-pushes or overwrites a newer user commit.
 
-These are examples only, not actual viewing records.
-
-- **Month:** `Jan`, `January`, or `1`. Use `?` or leave blank if you only remember the year.
-- **Series:** a registered title or a TMDB link. For a new series, paste its TMDB URL here; the title, release year, synopsis, genres, and poster are retrieved automatically.
-- **Seasons:** `1`, `1, 3`, `1-3`, or `all` for the complete series as watched at that time. Leave blank for movie links.
-- **Watch:** `watch` or `rewatch`.
-- **Status:** `watched` or `unfinished`.
-- **Tags:** comma-separated personal tags; spaces, slashes, accents, and emoji work.
-- **Notes:** optional personal notes, displayed in details. Use `\|` for a literal pipe.
-
-### TMDB links
-
-For example:
-
-```text
-| Jun | https://www.themoviedb.org/tv/124834 | 3 | watch | watched | queer | |
-```
-
-Links with slugs, trailing slashes, or Markdown labels such as `[Heartstopper](https://www.themoviedb.org/tv/124834)` also work. Movie URLs use the movie endpoint and are displayed as films; they are never silently converted into TV series.
-
-One row is one viewing. Repeat the same title or link for a rewatch, in the same month, year, or a different year. Specific-season and complete-series rewatches are independent. `all` is never expanded based on later releases.
-
-### Registered titles and Letterboxd
-
-[`data/shows.csv`](data/shows.csv) is a readable table of title aliases and source links:
-
-| Series | TMDB | IMDb | Letterboxd |
-| --- | --- | --- | --- |
-| Heartstopper | https://www.themoviedb.org/tv/124834 | tt10638036 | |
-
-A registered title can be used directly in a diary row. The CSV contains links only; **all show metadata and posters come from TMDB**. The original nine entries have been matched to TMDB. Their viewing dates and seasons are preserved; release years now follow TMDB (Heartstopper premiered in 2022).
-
-The importer attempts to find Letterboxd pages, checks that their TMDB identifier matches the exact show or film, and caches verified links. A matching title alone is insufficient. Unavailable or blocked pages do not prevent publication and do not produce guessed links. You can also enter a verified canonical `https://letterboxd.com/film/.../` URL in the **Letterboxd** column. The links table applies to both title aliases and direct TMDB URLs.
-
-### Tags
-
-Use free-form tags like [my Letterboxd tags](https://letterboxd.com/shadrunov/tags/): themes (`queer`), languages (`deutsch`), places (`in darmstadt`), and companions (`w/ …`). Tags belong to a viewing, so rewatches can have different tags.
-
-The site discovers tags automatically. Select several to match all of them on a viewing. Search also matches tags and notes. No tags were guessed for the original Notion entries.
-
-## Import and publish
-
-The GitHub Pages workflow imports uncached TMDB titles, validates the diary, runs tests, builds the site, and publishes on pushes to `main`. The repository secret **TMDB_READ_ACCESS_TOKEN** is configured. Both API read tokens and v3 API keys are supported. Credentials are used only on the build runner, never published.
-
-Metadata and posters live in GitHub Actions cache and in the deployed site, not in bot commits. Cache expiry requires another import using the repository secret. The published page needs no server or runtime API calls. The build embeds the diary data into the HTML and versions the script and stylesheet URLs by content, so cached files cannot override updated layouts or break collection loading.
-
-To refresh metadata and check Letterboxd links again, open **Actions → Deploy GitHub Pages → Run workflow** and select **Refresh all referenced TMDB metadata and posters**. The optional URL test checks a TMDB link without adding a viewing. **Resolve catalogue titles to TMDB** is a maintenance helper for resolving the registered catalogue and exporting metadata as an artifact.
+Metadata and posters use Actions cache; the published page embeds its diary data and versions script/style URLs by content. The static site needs no server or runtime API calls. To refresh metadata and recheck Letterboxd links, use **Actions → Deploy GitHub Pages → Run workflow → Refresh all referenced TMDB metadata and posters**.
 
 ## Local preview
 
-Python 3, no packages:
+Python 3 and PyYAML:
 
 ```sh
-python3 scripts/import_tmdb.py
+python3 -m pip install -r requirements.txt
+python3 scripts/import_tmdb.py --write-names
 python3 scripts/build.py
 python3 -m http.server 8000 --directory _site
 ```
 
-The importer asks for your credential with a hidden prompt if uncached links need fetching, or accepts the `TMDB_READ_ACCESS_TOKEN` environment variable. Cache files are in ignored `.cache/tmdb/`; generated website files are in ignored `_site/`. Rebuild after editing tables, then refresh http://localhost:8000.
+The importer asks for a credential with a hidden prompt if uncached links need fetching, or accepts the `TMDB_READ_ACCESS_TOKEN` environment variable. Rebuild after editing YAML, then refresh http://localhost:8000. `.cache/` and `_site/` are ignored by Git.
 
 ```sh
 python3 scripts/check.py

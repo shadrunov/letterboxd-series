@@ -1,5 +1,5 @@
-"""Validate yearly diary tables and metadata; never requires network access."""
+"""Validate yearly YAML diaries and metadata; never requires network access."""
 from build import load_diary
 
 diary = load_diary()
-print(f'Validated {len(diary["entries"])} viewings and {len(diary["years"])} year tables.')
+print(f'Validated {len(diary["entries"])} viewings and {len(diary["years"])} YAML files.')

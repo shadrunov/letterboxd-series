@@ -17,7 +17,7 @@ on:
         type: boolean
         default: false
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 concurrency:
@@ -34,6 +34,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Install Python dependencies
+        run: python3 -m pip install -r requirements.txt
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -65,9 +67,9 @@ jobs:
           REFRESH_TMDB: ${{ inputs.refresh_tmdb }}
         run: |
           if [ "$REFRESH_TMDB" = "true" ]; then
-            python3 scripts/import_tmdb.py --refresh
+            python3 scripts/import_tmdb.py --refresh --write-names
           else
-            python3 scripts/import_tmdb.py
+            python3 scripts/import_tmdb.py --write-names
           fi
       - name: Validate diary tables and run tests
         run: |
@@ -77,6 +79,17 @@ jobs:
         run: node scripts/test_app.mjs
       - name: Build static site
         run: python3 scripts/build.py
+      - name: Save fetched names to YAML
+        if: ${{ github.ref == 'refs/heads/main' }}
+        run: |
+          if git diff --quiet -- diary; then
+            exit 0
+          fi
+          git add -- diary/*.yaml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Fill TMDB names in diary [skip ci]"
+          git push origin HEAD:main
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
