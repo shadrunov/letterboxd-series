@@ -1,34 +1,15 @@
 # One entry per viewing. Names are filled in by GitHub Actions.
 
-- url: https://www.themoviedb.org/tv/301507
-  name: "Heated Rivalry"
-  date: 2026-01
-  seasons: [1]
-  tags: ["w/ andrei"]
+- url: https://www.themoviedb.org/tv/128098
+  name: "Interview with the Vampire"
+  date: 2026-11
+  seasons: [1, 2]
+  tags: ["w/ alena ❤️", "in dublin"]
 
-- url: https://www.themoviedb.org/tv/223440
-  name: "The Eighth Sense"
-  date: 2026-02
-  seasons: [1]
-  tags: ["w/ andrei"]
-
-- url: https://www.themoviedb.org/tv/62722
-  name: "The Lover"
-  date: 2026-03
-  seasons: [1]
-  tags: ["w/ andrei"]
-  status: unfinished
-
-- url: https://www.themoviedb.org/tv/245159
-  name: "Shine"
-  date: 2026-06
-  seasons: [1]
-  tags: ["w/ andrei"]
-
-- url: https://www.themoviedb.org/tv/124834
-  name: "Heartstopper"
-  date: 2026-07
-  seasons: [3]
+- url: https://www.themoviedb.org/tv/125910
+  name: "Young Royals"
+  date: 2026-10
+  seasons: [1, 2, 3]
   tags: ["w/ andrei"]
 
 - url: https://www.themoviedb.org/tv/210107
@@ -43,14 +24,33 @@
   seasons: [1]
   tags: ["w/ andrei"]
 
-- url: https://www.themoviedb.org/tv/125910
-  name: "Young Royals"
-  date: 2026-10
-  seasons: [1, 2, 3]
+- url: https://www.themoviedb.org/tv/124834
+  name: "Heartstopper"
+  date: 2026-07
+  seasons: [3]
   tags: ["w/ andrei"]
 
-- url: https://www.themoviedb.org/tv/128098
-  name: "Interview with the Vampire"
-  date: 2026-11
-  seasons: [1, 2]
-  tags: ["w/ alena ❤️", "in dublin"]
+- url: https://www.themoviedb.org/tv/245159
+  name: "Shine"
+  date: 2026-06
+  seasons: [1]
+  tags: ["w/ andrei"]
+
+- url: https://www.themoviedb.org/tv/62722
+  name: "The Lover"
+  date: 2026-03
+  seasons: [1]
+  tags: ["w/ andrei"]
+  status: unfinished
+
+- url: https://www.themoviedb.org/tv/223440
+  name: "The Eighth Sense"
+  date: 2026-02
+  seasons: [1]
+  tags: ["w/ andrei"]
+
+- url: https://www.themoviedb.org/tv/301507
+  name: "Heated Rivalry"
+  date: 2026-01
+  seasons: [1]
+  tags: ["w/ andrei"]
