@@ -225,6 +225,7 @@ async function init() {
     const year = new Date().getFullYear();
     $('#total-this-year').textContent = countThisYear(state.entries, year);
     $('#this-year-stat').title = `Diary entries logged in ${year}`;
+    $('#this-year-stat').href = `?year=${year}`;
     const latest = state.entries.length ? latestEntry(state.entries) : null;
     if (latest) $('#latest-title').innerHTML = `${escapeHTML(latest.title)} <small>${escapeHTML(watchLabel(latest))}</small>`;
     const params = new URLSearchParams(location.search);
