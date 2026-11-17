@@ -4,6 +4,10 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
+      resolve_catalogue:
+        description: Resolve catalogue titles to TMDB and export metadata
+        type: boolean
+        default: false
       verify_tmdb_url:
         description: Optional TMDB URL to test without adding a viewing
         type: string
@@ -38,6 +42,17 @@ jobs:
           path: .cache/tmdb
           key: tmdb-v1-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: tmdb-v1-
+      - name: Resolve catalogue to TMDB
+        if: ${{ inputs.resolve_catalogue == true }}
+        env:
+          TMDB_READ_ACCESS_TOKEN: ${{ secrets.TMDB_READ_ACCESS_TOKEN }}
+        run: python3 scripts/resolve_titles.py
+      - uses: actions/upload-artifact@v4
+        if: ${{ inputs.resolve_catalogue == true }}
+        with:
+          name: tmdb-catalogue
+          path: .cache/tmdb
+          include-hidden-files: true
       - name: Verify requested TMDB link
         if: ${{ inputs.verify_tmdb_url != '' }}
         env:
