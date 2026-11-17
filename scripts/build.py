@@ -5,6 +5,7 @@ import json
 import re
 import shutil
 from tmdb import parse_reference
+from continuations import continuation_rules, combine_continuations
 from diary import diary_files, read_document, parse_seasons
 from pathlib import Path
 
@@ -29,6 +30,7 @@ def parse_year(path, tmdb_cache):
 def load_diary(root=ROOT):
     cache_path = root / '.cache/tmdb/catalogue.json'
     tmdb_cache = json.loads(cache_path.read_text()) if cache_path.exists() else {}
+    tmdb_cache = combine_continuations(tmdb_cache, continuation_rules(root))
     registry = root / 'data/shows.csv'
     if registry.exists():
         with registry.open(newline='') as file:

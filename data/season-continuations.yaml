@@ -1,0 +1,6 @@
+# TMDB sometimes gives a renamed continuation its own series record.
+# AMC identifies The Vampire Lestat as Interview with the Vampire season 3:
+# https://www.amc.com/blogs/big-news-from-amc-networks-ny-comic-con-panels--1073587
+- series: https://www.themoviedb.org/tv/128098
+  continuation: https://www.themoviedb.org/tv/323411
+  season_offset: 2

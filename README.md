@@ -94,11 +94,13 @@ Open a title or poster for its synopsis, viewing history, season release years a
 
 ## Publishing
 
-Pushes to `main` import uncached TMDB records, enrich names, sort and format diary files, lint YAML, run tests, build, commit changed YAML, and deploy through GitHub Pages. The repository’s configured **TMDB_READ_ACCESS_TOKEN** secret accepts a read token or v3 API key. Credentials are used only on the build runner.
+Pushes to `main` refresh all referenced TMDB records, enrich names, sort and format diary files, lint YAML, run tests, build, commit changed YAML, and deploy through GitHub Pages. The repository’s configured **TMDB_READ_ACCESS_TOKEN** secret accepts a read token or v3 API key. Credentials are used only on the build runner.
 
 Only diary YAML changes are committed by the bot, after successful checks. The workflow uses the standard `GITHUB_TOKEN` and a `[skip ci]` commit to avoid recursion. A normal push protects concurrent edits: it never force-pushes or overwrites a newer user commit.
 
-Metadata and posters use Actions cache; the published page embeds its diary data and versions script/style URLs by content. The static site needs no server or runtime API calls. To refresh metadata and recheck Letterboxd links, use **Actions → Deploy GitHub Pages → Run workflow → Refresh all referenced TMDB metadata and posters**.
+Metadata and posters use Actions cache; the published page embeds its diary data and versions script/style URLs by content. The static site needs no server or runtime API calls. Metadata refreshes on every deployment and daily at 05:17 UTC. You can also run **Actions → Deploy GitHub Pages → Run workflow**. The site remains static between deployments; counts follow the latest TMDB data.
+
+When TMDB catalogues a renamed season as a separate series, [`data/season-continuations.yaml`](data/season-continuations.yaml) records a verified continuation and season offset. Its seasons are fetched from TMDB and shown under the original series with their own TMDB links. This includes *The Vampire Lestat* as season 3 of *Interview with the Vampire*. Your diary still records only the seasons you watched. If TMDB later reunites the records, native seasons take precedence to avoid duplicates.
 
 ## Local preview
 
@@ -118,7 +120,7 @@ The importer asks for a credential with a hidden prompt if uncached links need f
 
 ```sh
 python3 scripts/format_diary.py --check
-python3 -m yamllint --strict -c .yamllint.yaml diary .github/workflows/pages.yml .yamllint.yaml
+python3 -m yamllint --strict -c .yamllint.yaml diary data/season-continuations.yaml .github/workflows/pages.yml .yamllint.yaml
 python3 scripts/check.py
 python3 -m unittest discover -s scripts -p 'test_*.py'
 node scripts/test_app.mjs

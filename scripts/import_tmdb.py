@@ -16,12 +16,17 @@ from urllib.parse import urlencode, urlsplit
 from build import ROOT
 from diary import diary_files, read_document, fill_names
 from tmdb import parse_reference, reference_url
+from continuations import continuation_rules
 
 CACHE = ROOT / '.cache/tmdb'
 
 
 def discover_references(root=ROOT):
-    return sorted({parse_reference(row['url']) for path in diary_files(root) for _, row, _ in read_document(path)[1]})
+    refs = {parse_reference(row['url']) for path in diary_files(root) for _, row, _ in read_document(path)[1]}
+    for rule in continuation_rules(root):
+        if rule['series'] in refs:
+            refs.add(rule['continuation'])
+    return sorted(refs)
 
 
 def read_cache(cache):

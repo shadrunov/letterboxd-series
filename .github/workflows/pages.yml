@@ -2,6 +2,8 @@ name: Deploy GitHub Pages
 on:
   push:
     branches: [main]
+  schedule:
+    - cron: '17 5 * * *'
   workflow_dispatch:
     inputs:
       resolve_catalogue:
@@ -12,10 +14,6 @@ on:
         description: Optional TMDB URL to test without adding a viewing
         type: string
         default: ''
-      refresh_tmdb:
-        description: Refresh all referenced TMDB metadata and posters
-        type: boolean
-        default: false
 permissions:
   contents: write
   pages: write
@@ -64,17 +62,12 @@ jobs:
       - name: Import TMDB links
         env:
           TMDB_READ_ACCESS_TOKEN: ${{ secrets.TMDB_READ_ACCESS_TOKEN }}
-          REFRESH_TMDB: ${{ inputs.refresh_tmdb }}
         run: |
-          if [ "$REFRESH_TMDB" = "true" ]; then
-            python3 scripts/import_tmdb.py --refresh --write-names
-          else
-            python3 scripts/import_tmdb.py --write-names
-          fi
+          python3 scripts/import_tmdb.py --refresh --write-names
       - name: Sort, format, and lint YAML
         run: |
           python3 scripts/format_diary.py
-          python3 -m yamllint --strict -c .yamllint.yaml diary .github/workflows/pages.yml .yamllint.yaml
+          python3 -m yamllint --strict -c .yamllint.yaml diary data/season-continuations.yaml .github/workflows/pages.yml .yamllint.yaml
           python3 scripts/format_diary.py --check
       - name: Validate diary records and run tests
         run: |
