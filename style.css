@@ -452,3 +452,10 @@ dialog { max-height:calc(100vh - 32px); max-height:calc(100dvh - 32px); overflow
   .profile-header .latest { align-items:flex-start; text-align:left; }
   .diary-table { min-width:630px; }
 }
+
+/* Match Letterboxd's desktop calendar year colors and digit spacing. */
+.calendar-year { color:#bbccdd; background:#445566; text-decoration:none; }
+.calendar-year strong { letter-spacing:.075em; padding-left:.075em; }
+.calendar-year:hover,.calendar-year:focus { color:#fff; }
+.calendar-year:active { color:#abc; }
+.year-heading h3 a:hover { color:#fff; }

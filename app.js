@@ -22,7 +22,7 @@ function cardHTML(entry, aggregate = false) {
 }
 function diaryTable(groups) {
   return `<div class="diary-table-wrap"><table class="diary-table"><thead><tr><th scope="col">Year</th><th scope="col">Month</th><th scope="col">Series</th><th scope="col">Released</th><th scope="col">Seasons</th><th scope="col">Rewatch</th><th scope="col">Edit</th></tr></thead>${groups.map(({year, entries}) => {
-    const calendar = `<div class="calendar-month calendar-year"><strong>${year}</strong></div>`;
+    const calendar = `<a class="calendar-month calendar-year" href="?year=${year}" data-year="${year}" aria-label="Show diary entries from ${year}"><strong>${year}</strong></a>`;
     const rows = entries.map((entry,index) => {
       const month = entry.watched.length === 4 ? '<span aria-label="Month not recorded">—</span>' : months[Number(entry.watched.slice(5)) - 1];
       return `<tr><td class="year-cell">${index === 0 ? calendar : `<span class="sr-only">${year}</span>`}</td><td class="month-cell">${month}</td><td class="series-cell"><div class="diary-series"><button class="viewing-poster" type="button" data-id="${entry.id}" aria-label="Details for ${escapeHTML(entry.title)}">${posterHTML(entry)}</button><div><button class="card-title" type="button" data-id="${entry.id}">${escapeHTML(entry.title)}</button><div class="entry-tags">${tagsHTML(entry)}</div></div></div></td><td class="released-cell">${entry.year || '—'}</td><td class="seasons-cell">${seasonLabel(entry)}${entry.status === 'unfinished' ? '<span class="unfinished-text">Unfinished</span>' : ''}</td><td class="rewatch-cell">${entry.watch === 'rewatch' ? '<span class="rewatch-icon" aria-label="Rewatch" title="Rewatch">↻</span>' : '<span class="sr-only">Regular watch</span>'}</td><td class="edit-cell">${editLink(entry)}</td></tr>`;
@@ -85,7 +85,7 @@ function render() {
     $('#entries').className = `year-groups view-${state.view}`;
     const groups = state.years.filter(year => $('#year').value === 'all' || year === $('#year').value).map(year => ({year, entries:sortEntries(entries.filter(entry => entry.watched.startsWith(year)))})).filter(group => group.entries.length || !hasFilters);
     $('#entries').innerHTML = state.view === 'list' ? (groups.length ? diaryTable(groups) : '') : groups.map(({year, entries:group}) => {
-      return `<section class="year-group" aria-labelledby="heading-${year}"><div class="year-heading"><div><h3 id="heading-${year}">${year}</h3><span>${group.length} ${group.length === 1 ? 'viewing' : 'viewings'}</span></div><a href="https://github.com/shadrunov/letterboxd-series/edit/main/diary/${year}.yaml" target="_blank" rel="noopener noreferrer">Edit year ↗</a></div>${group.length ? `<div class="year-entries">${group.map(entry => cardHTML(entry)).join('')}</div>` : '<p class="empty-year">No viewings recorded yet.</p>'}</section>`;
+      return `<section class="year-group" aria-labelledby="heading-${year}"><div class="year-heading"><div><h3 id="heading-${year}"><a href="?year=${year}" data-year="${year}" aria-label="Show diary entries from ${year}">${year}</a></h3><span>${group.length} ${group.length === 1 ? 'viewing' : 'viewings'}</span></div><a href="https://github.com/shadrunov/letterboxd-series/edit/main/diary/${year}.yaml" target="_blank" rel="noopener noreferrer">Edit year ↗</a></div>${group.length ? `<div class="year-entries">${group.map(entry => cardHTML(entry)).join('')}</div>` : '<p class="empty-year">No viewings recorded yet.</p>'}</section>`;
     }).join('');
     $('#results-label').textContent = `${entries.length} ${entries.length === 1 ? 'viewing' : 'viewings'} · ${new Set(entries.map(entry => entry.showId)).size} series${state.tags.size > 1 ? ' · Matching all selected tags' : ''}`;
   }
@@ -99,6 +99,11 @@ function render() {
   if (state.view !== (watched ? 'large' : 'list')) params.set('view',state.view);
   [...state.tags].forEach(tag => params.append('tag',tag));
   history.replaceState(null,'',`${location.pathname}${params.size ? '?' + params : ''}${location.hash}`);
+}
+function setYearFilter(year) {
+  if (!state.years.includes(year)) return;
+  $('#year').value = year;
+  render();
 }
 function toggleTag(tag) { if (state.tags.has(tag)) state.tags.delete(tag); else state.tags.add(tag); render(); }
 function setSection(mode) {
@@ -140,6 +145,13 @@ function openDetail(id) {
   $('#detail').showModal();
 }
 $('#entries').addEventListener('click',event => {
+  const year = event.target.closest('[data-year]');
+  if (year) {
+    if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    setYearFilter(year.dataset.year);
+    return;
+  }
   const tag = event.target.closest('[data-tag]');
   if (tag) { toggleTag(tag.dataset.tag); return; }
   const button = event.target.closest('[data-id]');
