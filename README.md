@@ -25,7 +25,7 @@ Commit to `main`. GitHub Actions fetches the TMDB information, fills in `name`, 
 
 The examples are illustrative; they are not extra diary records. **You only need to enter the URL, date, seasons, and tags.** Names are maintained automatically. Comments, formatting, and the other fields are preserved when names are inserted or updated. JSON is generated internally; you never need to edit it.
 
-Each year has its own YAML file. Add `diary/2024.yaml` with the same list format to add another year. An empty year uses `[]`, as in [`2025.yaml`](diary/2025.yaml). Diary edit links on the site open the corresponding YAML file on GitHub.
+Each year has its own YAML file. Add `diary/2024.yaml` with the same list format to add another year. An empty year uses `[]`. Diary edit links on the site open the corresponding YAML file on GitHub.
 
 ### Fields
 
@@ -54,9 +54,38 @@ One list element is one viewing. To rewatch selected seasons, add another elemen
 
 Use `seasons: all` for a complete-series rewatch. Use `status: unfinished` if you did not finish it. A green eye marks completed season viewings, with a total counter when watched more than once. Unfinished entries do not count. Complete-series entries count regular seasons released by the logged month/year, without inferring future seasons, specials, or seasons with unknown release dates.
 
+### Different tags for different seasons
+
+Use separate YAML records for the same TMDB URL. For example:
+
+```yaml
+- url: https://www.themoviedb.org/tv/125910
+  date: 2024-06
+  seasons: [1]
+  tags: ["w/ alena ❤️"]
+
+- url: https://www.themoviedb.org/tv/125910
+  date: 2025-07
+  seasons: [2]
+  tags: [in dublin]
+
+- url: https://www.themoviedb.org/tv/125910
+  date: 2026-02
+  seasons: [3]
+  tags: [queer]
+```
+
+Place each record in its corresponding year file. These are examples, not actual viewing records. A record listing several seasons gives its tags to all those seasons; split it into separate records when their tags differ.
+
+**Diary combines regular-watch records of the same series into one entry**, across years. It shows the union of seasons and tags, dated by the latest `date` field (full dates are used for ordering even though only the month is displayed). The example above appears once in February 2026 with S1, S2, S3 and all three tags. Entering an older date later does not move the merged entry forward.
+
+Records with `rewatch: true` remain separate dated entries. Source YAML is never merged or rewritten by this display feature. Profile ENTRIES/THIS YEAR counters still count source records. The green-eye season counters also use source records, so grouping does not create extra watches. A merged entry is marked unfinished if any source record is still unfinished; update that record when you finish it.
+
+Diary filters run **after** grouping: tags from different seasons can match together, and the year filter uses the merged entry’s latest date. A year whose records all moved into a later merged entry does not display a misleading empty-year section. The merged row’s pencil opens the latest record; its details show all original records, tags, notes, and their own GitHub edit links. Individual seasons also display their corresponding tags.
+
 ## Browse
 
-- **Diary:** every viewing, grouped by year. Large cards (five per desktop row), small cards (eight), or a list with year-only calendars and a separate month column. The list has no day, rating, or review column.
+- **Diary:** merged regular watches plus separate rewatches, grouped by their displayed year. Large cards (five per desktop row), small cards (eight), or a list with year-only calendars and a separate month column. The list has no day, rating, or review column.
 - **Watched:** one card per series with a completed viewing, across all years. Rewatches are combined. Choose large or small cards.
 
 Search is at the top right. Filters sit directly above the entries. Search, tags, year, watch type, layout, and section are shareable in the URL. Select multiple tags to match all of them on a viewing. Search also matches notes.

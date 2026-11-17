@@ -19,7 +19,7 @@ const fixture = {
     { id: 'four', showId: 'new', title: 'A <New> Series', watched: '2026', seasons: [1], watch: 'watch', status: 'watched', tags: ['deutsch'], notes: '<b>personal</b>' },
   ],
 };
-async function createHarness(search = '', {inline = false, failFetch = false} = {}) {
+async function createHarness(search = '', {inline = false, failFetch = false, data = fixture} = {}) {
   const markup = inline ? page.replace('<!-- DIARY_DATA -->', '<script id="diary-data" type="application/json"></script>') : page;
   const ids = new Set([...markup.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]));
   const requests = [];
@@ -30,7 +30,7 @@ async function createHarness(search = '', {inline = false, failFetch = false} = 
     if (!elements.has(key)) elements.set(key, {
       value: key === '#sort' ? 'newest' : ['#year','#status','#watch'].includes(key) ? 'all' : '',
       options: [{value:'all'}, {value:'watched'}, {value:'unfinished'}, {value:'watch'}, {value:'rewatch'}, {value:'newest'}, {value:'oldest'}, {value:'title'}],
-      innerHTML: '', textContent: key === '#diary-data' ? JSON.stringify(fixture) : '', hidden: key === '#load-error', open: false,
+      innerHTML: '', textContent: key === '#diary-data' ? JSON.stringify(data) : '', hidden: key === '#load-error', open: false,
       addEventListener() {}, append(option) { this.options.push(option); }, setAttribute() {},
       showModal() { this.open = true; }, close() { this.open = false; },
     });
@@ -38,7 +38,7 @@ async function createHarness(search = '', {inline = false, failFetch = false} = 
   };
   const context = vm.createContext({
     document: {querySelector:get, querySelectorAll:()=>[], createElement:()=>({})},
-    fetch: async (...args) => { requests.push(args); if (failFetch) throw new Error('Network unavailable'); return {ok:true, json:async()=>structuredClone(fixture)}; },
+    fetch: async (...args) => { requests.push(args); if (failFetch) throw new Error('Network unavailable'); return {ok:true, json:async()=>structuredClone(data)}; },
     history: {replaceState(_a,_b,url) { context.lastURL = url; }},
     URLSearchParams, location: {pathname:'/letterboxd-series/', search, hash:''}, console:{log:console.log,error:(...args)=>errors.push(args)},
   });
@@ -154,4 +154,39 @@ run("state.view = 'small'; render()");
 assert.equal(get('#entries').className, 'year-groups view-small');
 const watchedListURL = await createHarness('?section=watched&view=list');
 assert.equal(watchedListURL.get('#entries').className, 'watched-collection view-large');
+// Separate season logs merge across years, while rewatches retain their own row.
+const seasonRecord = (id, date, seasons, tags, extra={}) => ({...fixture.entries[1], id, watched:date.slice(0,7), watchDate:date, seasons, tags, watch:'watch', status:'watched', notes:'', ...extra});
+const seasonFixture = {years:['2024','2025','2026'], entries:[
+  seasonRecord('season-one','2024-06-01',[1],['w/ alena ❤️'],{notes:'First season note'}),
+  seasonRecord('season-two','2025-07-12',[2],['in dublin']),
+  seasonRecord('season-three','2026-02-28',[3],['queer']),
+  seasonRecord('repeat-one','2026-03-03',[1],['rewatch tag'],{watch:'rewatch'}),
+]};
+const combined = await createHarness('', {data:seasonFixture});
+assert.equal(combined.run('matchingEntries().length'), 2);
+assert.equal(combined.get('#total-viewings').textContent, 4);
+let combinedHTML = combined.get('#entries').innerHTML;
+assert.ok(combinedHTML.includes('class="tags-heading">Tags</th><th scope="col">Released'));
+assert.ok(combinedHTML.includes('S1 · S2 · S3'));
+assert.ok(!combinedHTML.includes('heading-2024'));
+assert.ok(!combinedHTML.includes('heading-2025'));
+assert.ok(!combinedHTML.match(/<td class="series-cell">([\s\S]*?)<\/td>/)[1].includes('entry-tags'));
+assert.equal(combined.run("matchingEntries().find(entry=>entry.watch==='watch').watched"), '2026-02');
+assert.equal(combined.run("matchingEntries().find(entry=>entry.watch==='watch').watchDate"), '2026-02-28');
+combined.run("toggleTag('w/ alena ❤️'); toggleTag('in dublin')");
+assert.equal(combined.run('matchingEntries().length'), 1);
+combined.run("openDetail('season-three')");
+assert.ok(combined.get('#detail-content').innerHTML.includes('First season note'));
+assert.ok(combined.get('#detail-content').innerHTML.includes('history-entry'));
+assert.equal(combined.run("seasonTags(state.entries[0], {number:2}).join(',')"), 'in dublin');
+assert.ok(!combined.run("seasonTags(state.entries[0], {number:2}).includes('w/ alena ❤️')"));
+assert.equal(combined.run("seasonWatchCount(state.entries[0], {number:1})"), 2);
+assert.equal(combined.run("seasonWatchCount(state.entries[0], {number:2})"), 1);
+combined.run("state.tags.clear(); toggleTag('w/ alena ❤️'); toggleTag('rewatch tag')");
+assert.equal(combined.run('matchingEntries().length'), 0);
+combined.run("state.tags.clear(); setYearFilter('2024')");
+assert.equal(combined.run('matchingEntries().length'), 0);
+assert.equal(combined.get('#empty-state').hidden, false);
+assert.equal(combined.run("latestEntry([{watchDate:'2026-03-20'},{watchDate:'2026-03-01'}]).watchDate"), '2026-03-20');
+assert.equal(combined.run('JSON.stringify(state.entries)'), JSON.stringify(seasonFixture.entries));
 console.log('Passed app checks: year groups, compact views, unique/viewing/rewatch totals, tags, filters, URL restoration, escaping, repeat history, unknown months.');

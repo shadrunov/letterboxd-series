@@ -1,7 +1,7 @@
 'use strict';
 const $ = selector => document.querySelector(selector);
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const state = { entries: [], years: [], mode: 'diary', view: 'list', views: {diary:'list', watched:'large'}, tags: new Set() };
+const state = { entries: [], years: [], mode: 'diary', view: 'list', displayEntries: [], views: {diary:'list', watched:'large'}, tags: new Set() };
 const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[c]));
 const seasonLabel = entry => entry.mediaType === 'movie' ? 'Film' : entry.allSeasons ? 'All seasons' : entry.seasons.map(n => `S${n}`).join(' · ');
 const watchLabel = entry => entry.watched.length === 4 ? `${entry.watched} · month not recorded` : `${months[Number(entry.watched.slice(5)) - 1]} ${entry.watched.slice(0, 4)}`;
@@ -21,29 +21,55 @@ function cardHTML(entry, aggregate = false) {
   </article>`;
 }
 function diaryTable(groups) {
-  return `<div class="diary-table-wrap"><table class="diary-table"><thead><tr><th scope="col">Year</th><th scope="col">Month</th><th scope="col">Series</th><th scope="col">Released</th><th scope="col">Seasons</th><th scope="col">Rewatch</th><th scope="col">Edit</th></tr></thead>${groups.map(({year, entries}) => {
+  return `<div class="diary-table-wrap"><table class="diary-table"><thead><tr><th scope="col">Year</th><th scope="col">Month</th><th scope="col">Series</th><th scope="col" class="tags-heading">Tags</th><th scope="col">Released</th><th scope="col">Seasons</th><th scope="col">Rewatch</th><th scope="col">Edit</th></tr></thead>${groups.map(({year, entries}) => {
     const calendar = `<a class="calendar-month calendar-year" href="?year=${year}" data-year="${year}" aria-label="Show diary entries from ${year}"><strong>${year}</strong></a>`;
     const rows = entries.map((entry,index) => {
       const month = entry.watched.length === 4 ? '<span aria-label="Month not recorded">—</span>' : months[Number(entry.watched.slice(5)) - 1];
-      return `<tr><td class="year-cell">${index === 0 ? calendar : `<span class="sr-only">${year}</span>`}</td><td class="month-cell">${month}</td><td class="series-cell"><div class="diary-series"><button class="viewing-poster" type="button" data-id="${entry.id}" aria-label="Details for ${escapeHTML(entry.title)}">${posterHTML(entry)}</button><div><button class="card-title" type="button" data-id="${entry.id}">${escapeHTML(entry.title)}</button><div class="entry-tags">${tagsHTML(entry)}</div></div></div></td><td class="released-cell">${entry.year || '—'}</td><td class="seasons-cell">${seasonLabel(entry)}${entry.status === 'unfinished' ? '<span class="unfinished-text">Unfinished</span>' : ''}</td><td class="rewatch-cell">${entry.watch === 'rewatch' ? '<span class="rewatch-icon" aria-label="Rewatch" title="Rewatch">↻</span>' : '<span class="sr-only">Regular watch</span>'}</td><td class="edit-cell">${editLink(entry)}</td></tr>`;
+      return `<tr><td class="year-cell">${index === 0 ? calendar : `<span class="sr-only">${year}</span>`}</td><td class="month-cell">${month}</td><td class="series-cell"><div class="diary-series"><button class="viewing-poster" type="button" data-id="${entry.id}" aria-label="Details for ${escapeHTML(entry.title)}">${posterHTML(entry)}</button><div><button class="card-title" type="button" data-id="${entry.id}">${escapeHTML(entry.title)}</button></div></div></td><td class="tags-cell"><div class="entry-tags">${tagsHTML(entry)}</div></td><td class="released-cell">${entry.year || '—'}</td><td class="seasons-cell">${seasonLabel(entry)}${entry.status === 'unfinished' ? '<span class="unfinished-text">Unfinished</span>' : ''}</td><td class="rewatch-cell">${entry.watch === 'rewatch' ? '<span class="rewatch-icon" aria-label="Rewatch" title="Rewatch">↻</span>' : '<span class="sr-only">Regular watch</span>'}</td><td class="edit-cell">${editLink(entry)}</td></tr>`;
     }).join('');
-    return `<tbody id="heading-${year}" aria-label="${year}">${rows || `<tr><td class="year-cell">${calendar}</td><td colspan="6" class="empty-year">No viewings recorded yet.</td></tr>`}</tbody>`;
+    return `<tbody id="heading-${year}" aria-label="${year}">${rows || `<tr><td class="year-cell">${calendar}</td><td colspan="7" class="empty-year">No viewings recorded yet.</td></tr>`}</tbody>`;
   }).join('')}</table></div>`;
+}
+const dateKey = entry => entry.watchDate || entry.watched;
+function latestEntry(entries) {
+  return entries.reduce((latest,entry) => dateKey(entry) >= dateKey(latest) ? entry : latest);
+}
+function mergeDiaryEntries(entries) {
+  const groups = new Map();
+  const result = [];
+  for (const entry of entries) {
+    if (entry.watch === 'rewatch') { result.push(entry); continue; }
+    if (!groups.has(entry.showId)) groups.set(entry.showId, []);
+    groups.get(entry.showId).push(entry);
+  }
+  for (const group of groups.values()) {
+    const latest = latestEntry(group);
+    result.push({...latest,
+      seasons:[...new Set(group.flatMap(entry => entry.seasons))].sort((a,b) => a-b),
+      allSeasons:group.some(entry => entry.allSeasons),
+      tags:[...new Set(group.flatMap(entry => entry.tags))],
+      status:group.every(entry => entry.status === 'watched') ? 'watched' : 'unfinished',
+      sourceEntries:group,
+      recordCount:group.length,
+    });
+  }
+  return result;
 }
 function matchingEntries() {
   const query = $('#search').value.trim().toLocaleLowerCase();
-  return state.entries.filter(entry =>
+  const entries = state.mode === 'diary' ? mergeDiaryEntries(state.entries) : state.entries;
+  return entries.filter(entry =>
     ($('#year').value === 'all' || entry.watched.startsWith($('#year').value)) &&
     (state.mode === 'watched' ? entry.status === 'watched' : $('#status').value === 'all' || entry.status === $('#status').value) &&
     ($('#watch').value === 'all' || entry.watch === $('#watch').value) &&
     [...state.tags].every(tag => entry.tags.includes(tag)) &&
-    [entry.title, entry.notes, ...entry.tags].join(' ').toLocaleLowerCase().includes(query));
+    [entry.title, entry.notes, ...entry.tags, ...(entry.sourceEntries || []).map(source => source.notes)].join(' ').toLocaleLowerCase().includes(query));
 }
 function sortEntries(entries) {
   return entries.sort((a,b) => {
-    if ($('#sort').value === 'title') return a.title.localeCompare(b.title) || b.watched.localeCompare(a.watched);
+    if ($('#sort').value === 'title') return a.title.localeCompare(b.title) || dateKey(b).localeCompare(dateKey(a));
     if (a.watched.slice(0,4) === b.watched.slice(0,4) && a.watched.length !== b.watched.length) return b.watched.length - a.watched.length;
-    return $('#sort').value === 'oldest' ? a.watched.localeCompare(b.watched) : b.watched.localeCompare(a.watched);
+    return $('#sort').value === 'oldest' ? dateKey(a).localeCompare(dateKey(b)) : dateKey(b).localeCompare(dateKey(a));
   });
 }
 function watchedEntries(entries) {
@@ -54,12 +80,12 @@ function watchedEntries(entries) {
     groups.get(entry.showId).push(entry);
   }
   return sortEntries([...groups.values()].map(group => {
-    const latest = [...group].sort((a,b) => b.watched.localeCompare(a.watched))[0];
+    const latest = latestEntry(group);
     return {...latest, seasons:[...new Set(group.flatMap(entry => entry.seasons))].sort((a,b) => a-b), allSeasons:group.some(entry => entry.allSeasons), tags:[...new Set(group.flatMap(entry => entry.tags))], viewingCount:group.length};
   }));
 }
 function renderTags() {
-  const entries = state.mode === 'watched' ? state.entries.filter(entry => entry.status === 'watched') : state.entries;
+  const entries = state.mode === 'watched' ? state.entries.filter(entry => entry.status === 'watched') : mergeDiaryEntries(state.entries);
   const tags = [...new Set(entries.flatMap(entry => entry.tags))].sort((a,b) => a.localeCompare(b));
   $('#tag-filters').innerHTML = `<button class="tag all-tags" type="button" data-clear-tags aria-pressed="${state.tags.size === 0}">All tags</button>` + tags.map(tag => `<button class="tag" type="button" data-tag="${escapeHTML(tag)}" aria-pressed="${state.tags.has(tag)}">${escapeHTML(tag)} <span>${entries.filter(entry => entry.tags.includes(tag)).length}</span></button>`).join('');
   $('#tag-help').hidden = tags.length > 0;
@@ -67,7 +93,7 @@ function renderTags() {
 function render() {
   const entries = matchingEntries();
   const watched = state.mode === 'watched';
-  const hasFilters = $('#search').value.trim() || (!watched && $('#status').value !== 'all') || $('#watch').value !== 'all' || state.tags.size;
+  const hasFilters = $('#search').value.trim() || (!watched && $('#status').value !== 'all') || $('#watch').value !== 'all' || state.tags.size || $('#year').value !== 'all';
   if (watched && state.view === 'list') state.view = state.views.watched;
   $('#collection-title').textContent = watched ? 'Watched' : 'Diary';
   $('#status-filter').hidden = watched;
@@ -78,16 +104,18 @@ function render() {
   });
   if (watched) {
     const shows = watchedEntries(entries);
+    state.displayEntries = shows;
     $('#entries').className = `watched-collection view-${state.view}`;
     $('#entries').innerHTML = `<div class="year-entries">${shows.map(entry => cardHTML(entry, true)).join('')}</div>`;
     $('#results-label').textContent = `${shows.length} series watched · One card per series`;
   } else {
+    state.displayEntries = entries;
     $('#entries').className = `year-groups view-${state.view}`;
-    const groups = state.years.filter(year => $('#year').value === 'all' || year === $('#year').value).map(year => ({year, entries:sortEntries(entries.filter(entry => entry.watched.startsWith(year)))})).filter(group => group.entries.length || !hasFilters);
+    const groups = state.years.filter(year => $('#year').value === 'all' || year === $('#year').value).map(year => ({year, entries:sortEntries(entries.filter(entry => entry.watched.startsWith(year)))})).filter(group => group.entries.length || (!hasFilters && !state.entries.some(entry => entry.watched.startsWith(group.year))));
     $('#entries').innerHTML = state.view === 'list' ? (groups.length ? diaryTable(groups) : '') : groups.map(({year, entries:group}) => {
       return `<section class="year-group" aria-labelledby="heading-${year}"><div class="year-heading"><div><h3 id="heading-${year}"><a href="?year=${year}" data-year="${year}" aria-label="Show diary entries from ${year}">${year}</a></h3><span>${group.length} ${group.length === 1 ? 'viewing' : 'viewings'}</span></div><a href="https://github.com/shadrunov/letterboxd-series/edit/main/diary/${year}.yaml" target="_blank" rel="noopener noreferrer">Edit year ↗</a></div>${group.length ? `<div class="year-entries">${group.map(entry => cardHTML(entry)).join('')}</div>` : '<p class="empty-year">No viewings recorded yet.</p>'}</section>`;
     }).join('');
-    $('#results-label').textContent = `${entries.length} ${entries.length === 1 ? 'viewing' : 'viewings'} · ${new Set(entries.map(entry => entry.showId)).size} series${state.tags.size > 1 ? ' · Matching all selected tags' : ''}`;
+    $('#results-label').textContent = `${entries.length} ${entries.length === 1 ? 'entry' : 'entries'} · ${new Set(entries.map(entry => entry.showId)).size} series${state.tags.size > 1 ? ' · Matching all selected tags' : ''}`;
   }
   $('#empty-state').hidden = entries.length > 0 || (!watched && !hasFilters);
   renderTags();
@@ -112,11 +140,15 @@ function setSection(mode) {
   state.view = state.views[mode];
   render();
 }
+function viewingIncludesSeason(viewing, season) {
+  return viewing.seasons.includes(season.number) ||
+    (viewing.allSeasons && season.number > 0 && season.airDate && season.airDate.slice(0, viewing.watched.length) <= viewing.watched);
+}
 function seasonWatchCount(entry, season) {
-  return state.entries.filter(viewing => viewing.showId === entry.showId && viewing.status === 'watched' && (
-    viewing.seasons.includes(season.number) ||
-    (viewing.allSeasons && season.number > 0 && season.airDate && season.airDate.slice(0, viewing.watched.length) <= viewing.watched)
-  )).length;
+  return state.entries.filter(viewing => viewing.showId === entry.showId && viewing.status === 'watched' && viewingIncludesSeason(viewing, season)).length;
+}
+function seasonTags(entry, season) {
+  return [...new Set(state.entries.filter(viewing => viewing.showId === entry.showId && viewingIncludesSeason(viewing, season)).flatMap(viewing => viewing.tags || []))];
 }
 function watchedEye(count) {
   if (!count) return '';
@@ -133,15 +165,15 @@ function seasonsHTML(entry) {
   return `<section class="seasons-section" aria-labelledby="seasons-heading"><div class="seasons-heading"><h3 id="seasons-heading">Seasons</h3><p>${facts.join(' · ')}</p></div>${seasons.length ? `<ol class="season-list">${seasons.map(season => {
     const year = season.airDate && /^\d{4}-/.test(season.airDate) ? season.airDate.slice(0,4) : 'Release date TBA';
     const episodes = Number.isInteger(season.episodeCount) ? `${season.episodeCount} ${season.episodeCount === 1 ? 'episode' : 'episodes'}` : 'Episode count unavailable';
-    return `<li><div class="season-heading"><div><h4>${escapeHTML(season.name || (season.number === 0 ? 'Specials' : 'Season ' + season.number))}</h4><p>${escapeHTML(year)} · ${episodes}</p></div><div class="season-actions">${watchedEye(seasonWatchCount(entry, season))}${season.url ? `<a href="${escapeHTML(season.url)}" class="season-link" target="_blank" rel="noopener noreferrer" aria-label="${escapeHTML(season.name)} on TMDB">TMDB ↗</a>` : ''}</div></div>${season.overview ? `<details class="season-description"><summary>Season synopsis</summary><p>${escapeHTML(season.overview)}</p></details>` : ''}</li>`;
+    return `<li><div class="season-heading"><div><h4>${escapeHTML(season.name || (season.number === 0 ? 'Specials' : 'Season ' + season.number))}</h4><p>${escapeHTML(year)} · ${episodes}</p><div class="entry-tags season-tags">${tagsHTML({tags:seasonTags(entry, season)})}</div></div><div class="season-actions">${watchedEye(seasonWatchCount(entry, season))}${season.url ? `<a href="${escapeHTML(season.url)}" class="season-link" target="_blank" rel="noopener noreferrer" aria-label="${escapeHTML(season.name)} on TMDB">TMDB ↗</a>` : ''}</div></div>${season.overview ? `<details class="season-description"><summary>Season synopsis</summary><p>${escapeHTML(season.overview)}</p></details>` : ''}</li>`;
   }).join('')}</ol>` : '<p class="seasons-unavailable">Season information is not available yet.</p>'}</section>`;
 }
 function openDetail(id) {
-  const entry = state.entries.find(entry => entry.id === id);
+  const entry = state.displayEntries.find(entry => entry.id === id) || state.entries.find(entry => entry.id === id);
   if (!entry) return;
-  const history = [...state.entries.filter(other => other.showId === entry.showId)].sort((a,b) => b.watched.localeCompare(a.watched));
+  const history = [...state.entries.filter(other => other.showId === entry.showId)].sort((a,b) => dateKey(b).localeCompare(dateKey(a)));
   const sourceLinks = [entry.url ? `<a class="detail-link" href="${escapeHTML(entry.url)}" target="_blank" rel="noopener noreferrer">TMDB ↗</a>` : '', entry.letterboxd ? `<a class="detail-link" href="${escapeHTML(entry.letterboxd)}" target="_blank" rel="noopener noreferrer">Letterboxd ↗</a>` : ''].join('');
-  $('#detail-content').innerHTML = `<div class="detail-layout"><div class="detail-poster">${posterHTML(entry)}</div><div class="detail-copy"><span class="detail-year">${[entry.year,...(entry.genres || [])].filter(Boolean).map(escapeHTML).join(' · ')}</span><h2>${escapeHTML(entry.title)}</h2><p class="detail-watch">${seasonLabel(entry)} · ${entry.status === 'unfinished' ? 'Unfinished' : 'Watched'}${entry.watch === 'rewatch' ? ' · ↻ Rewatch' : ''}<br>Logged ${escapeHTML(watchLabel(entry))}</p><div class="entry-tags">${tagsHTML(entry)}</div>${entry.notes ? `<p class="detail-note">${escapeHTML(entry.notes)}</p>` : ''}<div class="other-viewings"><h3>Viewing history</h3>${history.map(other => `<p>${escapeHTML(watchLabel(other))} · ${seasonLabel(other)}${other.watch === 'rewatch' ? ' · ↻ Rewatch' : ''}${other.status === 'unfinished' ? ' · Unfinished' : ''} ${editLink(other)}</p>`).join('')}</div><p class="detail-summary">${escapeHTML(entry.summary || '')}</p><div class="source-links">${sourceLinks}</div>${entry.url ? '<p class="detail-credit">Summary &amp; poster via TMDB.</p>' : ''}</div></div>${seasonsHTML(entry)}`;
+  $('#detail-content').innerHTML = `<div class="detail-layout"><div class="detail-poster">${posterHTML(entry)}</div><div class="detail-copy"><span class="detail-year">${[entry.year,...(entry.genres || [])].filter(Boolean).map(escapeHTML).join(' · ')}</span><h2>${escapeHTML(entry.title)}</h2><p class="detail-watch">${seasonLabel(entry)} · ${entry.status === 'unfinished' ? 'Unfinished' : 'Watched'}${entry.watch === 'rewatch' ? ' · ↻ Rewatch' : ''}<br>Logged ${escapeHTML(watchLabel(entry))}</p><div class="entry-tags">${tagsHTML(entry)}</div>${entry.notes ? `<p class="detail-note">${escapeHTML(entry.notes)}</p>` : ''}<div class="other-viewings"><h3>Viewing history</h3>${history.map(other => `<div class="history-entry"><p>${escapeHTML(watchLabel(other))} · ${seasonLabel(other)}${other.watch === 'rewatch' ? ' · ↻ Rewatch' : ''}${other.status === 'unfinished' ? ' · Unfinished' : ''} ${editLink(other)}</p><div class="entry-tags">${tagsHTML(other)}</div>${other.notes ? `<p class="history-note">${escapeHTML(other.notes)}</p>` : ''}</div>`).join('')}</div><p class="detail-summary">${escapeHTML(entry.summary || '')}</p><div class="source-links">${sourceLinks}</div>${entry.url ? '<p class="detail-credit">Summary &amp; poster via TMDB.</p>' : ''}</div></div>${seasonsHTML(entry)}`;
   $('#detail').showModal();
 }
 $('#entries').addEventListener('click',event => {
@@ -193,7 +225,7 @@ async function init() {
     const year = new Date().getFullYear();
     $('#total-this-year').textContent = countThisYear(state.entries, year);
     $('#this-year-stat').title = `Diary entries logged in ${year}`;
-    const latest = [...state.entries].sort((a,b) => b.watched.localeCompare(a.watched))[0];
+    const latest = state.entries.length ? latestEntry(state.entries) : null;
     if (latest) $('#latest-title').innerHTML = `${escapeHTML(latest.title)} <small>${escapeHTML(watchLabel(latest))}</small>`;
     const params = new URLSearchParams(location.search);
     for (const key of ['year','status','watch','sort']) if ([...$(`#${key}`).options].some(option => option.value === params.get(key))) $(`#${key}`).value = params.get(key);

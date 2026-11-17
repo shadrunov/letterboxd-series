@@ -459,3 +459,29 @@ dialog { max-height:calc(100vh - 32px); max-height:calc(100dvh - 32px); overflow
 .calendar-year:hover,.calendar-year:focus { color:#fff; }
 .calendar-year:active { color:#abc; }
 .year-heading h3 a:hover { color:#fff; }
+
+/* Pointed Letterboxd-style tag labels. */
+.tag { --tag-fill:#445566; position:relative; margin-right:9px; border:0; border-radius:2px 0 0 2px; background:var(--tag-fill); color:#9ab; padding:4px 6px; font-size:11px; font-weight:400; line-height:1.2; max-width:calc(100% - 9px); }
+.tag::after { content:''; position:absolute; left:100%; top:0; width:9px; height:100%; background:var(--tag-fill); clip-path:polygon(0 0,100% 50%,0 100%); }
+.tag:hover { --tag-fill:#556677; color:#ddeeff; }
+.tag[aria-pressed=true] { --tag-fill:#556677; background:var(--tag-fill); color:#ddeeff; border:0; }
+.tag span { color:inherit; opacity:.75; }
+.entry-tags { gap:5px 7px; }
+/* Tags are right-aligned beside Released, never underneath diary titles. */
+.diary-table { min-width:820px; }
+.diary-table th:nth-child(3) { width:auto; }
+.diary-table th:nth-child(4) { width:185px; text-align:right; padding-right:12px; }
+.diary-table th:nth-child(5) { width:72px; text-align:center; }
+.diary-table th:nth-child(6) { width:104px; text-align:left; }
+.diary-table th:nth-child(7) { width:62px; text-align:center; }
+.diary-table th:last-child { width:42px; text-align:center; }
+.diary-table .tags-cell { text-align:right; padding-right:12px; }
+.tags-cell .entry-tags { justify-content:flex-end; margin:0; }
+.diary-table .tag { font-size:11px; padding:4px 6px; }
+.history-entry { margin:9px 0; }
+.history-entry .entry-tags,.season-tags { margin-top:6px; }
+.history-entry .history-note { margin-top:6px; color:#a0b5c4; white-space:pre-wrap; }
+@media(max-width:1000px) {
+  .diary-table th:nth-child(4) { width:150px; }
+}
+.history-entry .tag,.season-tags .tag { font-size:10px; padding:3px 5px; }
