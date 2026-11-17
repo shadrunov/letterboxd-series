@@ -405,10 +405,8 @@ dialog { max-height:calc(100vh - 32px); max-height:calc(100dvh - 32px); overflow
 .profile-title-row h1 { margin:0; font-family:Arial,Helvetica,sans-serif; font-size:26px; font-weight:700; line-height:1.2; letter-spacing:-.6px; }
 .profile-title-row h1 a:hover { color:var(--blue); }
 .profile-title-row .edit-diary { padding:5px 10px; border-color:#586d7d; border-radius:3px; background:#4d6172; color:#d8e3ec; font-size:10px; font-weight:700; letter-spacing:.7px; text-transform:uppercase; }
-.profile-bio { margin:12px 0 0; color:#d1dfe9; font-size:14px; line-height:1.55; }
-.profile-bio>span { color:#91a6b6; }
 .profile-location { display:flex; align-items:center; gap:5px; margin:12px 0 0; color:#748d9f; font-size:12px; }
-.profile-location svg { width:11px; height:15px; }
+.profile-location svg { width:9px; height:16px; flex:none; }
 .profile-activity { display:flex; flex-direction:column; align-items:flex-end; gap:19px; }
 .profile-header .stats { gap:0; }
 .profile-header .stats>div { min-width:78px; padding:0 14px; text-align:center; border-left:1px solid #2d3c47; }
@@ -442,7 +440,6 @@ dialog { max-height:calc(100vh - 32px); max-height:calc(100dvh - 32px); overflow
   .profile-photo img { width:76px; height:76px; }
   .profile-title-row h1 { font-size:22px; }
   .profile-title-row .edit-diary { margin:0; }
-  .profile-bio { font-size:13px; margin-top:10px; }
   .profile-location { margin-top:9px; font-size:11px; }
   .profile-activity { flex-direction:column; align-items:stretch; gap:17px; }
   .profile-header .stats { justify-content:space-between; }
