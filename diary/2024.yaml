@@ -5,3 +5,41 @@
   date: 2024-01
   seasons: [1]
   tags: ["w/ alena ❤️"]
+
+- url: https://www.themoviedb.org/tv/124834-heartstopper
+  date: 2024-09
+  seasons: [1, 2]
+  tags: ["queer"]
+
+- url: https://www.themoviedb.org/tv/124834-heartstopper
+  date: 2024-10
+  seasons: [3]
+  tags: ["queer"]
+
+- url: https://www.themoviedb.org/tv/138501-agatha-all-along
+  date: 2024-10
+  seasons: [1]
+  status: unfinished
+  tags: ["queer"]
+
+- url: https://www.themoviedb.org/tv/99988-krasnaya-koroleva
+  date: 2024-12
+  seasons: [1]
+  status: unfinished
+  tags: ["russisch"]
+
+- url: https://www.themoviedb.org/tv/131488-the-empress
+  date: 2024-11
+  seasons: [1]
+  status: unfinished
+  tags: ["deutsch"]
+
+- url: https://www.themoviedb.org/tv/88512-bonding
+  date: 2024-12
+  seasons: [1]
+  tags: []
+
+- url: https://www.themoviedb.org/tv/79063-cunk-on
+  date: 2024-12
+  seasons: [2]
+  tags: []
