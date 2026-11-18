@@ -17,7 +17,7 @@ function cardHTML(entry, aggregate = false) {
     <button class="viewing-poster" type="button" data-id="${entry.id}" aria-label="Details for ${title}">${posterHTML(entry)}</button>
     <div class="viewing-info"><button class="card-title" type="button" data-id="${entry.id}"><span class="card-title-text">${title}</span></button>
       <p class="viewing-seasons">${entry.year ? `<span class="release-year">${entry.year}</span> · ` : ''}${seasonLabel(entry)}${!aggregate && entry.watch === 'rewatch' ? ' <span class="rewatch-badge">↻ Rewatch</span>' : ''}</p>
-    </div><div class="viewing-when"><span>${escapeHTML(watchLabel(entry))}</span>${aggregate ? `<span class="viewing-count">${entry.viewingCount} ${entry.viewingCount === 1 ? 'viewing' : 'viewings'}</span>` : `<span class="watch-status">${entry.status === 'unfinished' ? 'Ⅱ Unfinished' : '✓ Watched'}</span>`}</div><div class="entry-tags">${tagsHTML(entry)}</div>
+    </div><div class="viewing-when"><span>${escapeHTML(watchLabel(entry))}</span>${aggregate ? `<span class="viewing-count">${entry.viewingCount} ${entry.viewingCount === 1 ? 'viewing' : 'viewings'}</span>` : `<span class="watch-status">${entry.status === 'unfinished' ? 'Ⅱ Unfinished' : '✓ Watched'}</span>`}</div>${aggregate ? '' : `<div class="entry-tags">${tagsHTML(entry)}</div>`}
   </article>`;
 }
 function diaryTable(groups) {

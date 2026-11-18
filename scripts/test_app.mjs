@@ -194,3 +194,6 @@ assert.equal(combined.get('#empty-state').hidden, false);
 assert.equal(combined.run("latestEntry([{watchDate:'2026-03-20'},{watchDate:'2026-03-01'}]).watchDate"), '2026-03-20');
 assert.equal(combined.run('JSON.stringify(state.entries)'), JSON.stringify(seasonFixture.entries));
 console.log('Passed app checks: year groups, compact views, unique/viewing/rewatch totals, tags, filters, URL restoration, escaping, repeat history, unknown months.');
+
+assert.ok(!run('cardHTML(state.entries[0], true)').includes('entry-tags'));
+assert.ok(run('cardHTML(state.entries[0], false)').includes('entry-tags'));
