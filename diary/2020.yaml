@@ -1,17 +1,20 @@
 # One entry per viewing. Names are filled in by GitHub Actions.
 
+- url: https://www.themoviedb.org/tv/1668-friends
+  name: "Friends"
+  date: 2020-07
+  seasons: all
+  tags: []
+
 - url: https://www.themoviedb.org/tv/71915-good-omens
+  name: "Good Omens"
   date: 2020-06
   seasons: [1]
   tags: ["queer"]
 
 - url: https://www.themoviedb.org/tv/1100-how-i-met-your-mother
+  name: "How I Met Your Mother"
   date: 2020-03
   seasons: [1]
+  tags: []
   status: unfinished
-  tags: []
-
-- url: https://www.themoviedb.org/tv/1668-friends
-  date: 2020-07
-  seasons: all
-  tags: []

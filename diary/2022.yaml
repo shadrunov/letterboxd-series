@@ -1,8 +1,8 @@
 # One entry per viewing. Names are filled in by GitHub Actions.
 
-
 - url: https://www.themoviedb.org/tv/39340-2-broke-girls
+  name: "2 Broke Girls"
   date: 2022-12
   seasons: [1]
-  status: unfinished
   tags: []
+  status: unfinished

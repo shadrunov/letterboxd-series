@@ -1,45 +1,52 @@
 # One entry per viewing. Names are filled in by GitHub Actions.
 
-- url: https://www.themoviedb.org/tv/1457/
-  name: "Pride and Prejudice"
-  date: 2024-01
-  seasons: [1]
-  tags: ["w/ alena ❤️"]
-
-- url: https://www.themoviedb.org/tv/124834-heartstopper
-  date: 2024-09
-  seasons: [1, 2]
-  tags: ["queer"]
-
-- url: https://www.themoviedb.org/tv/124834-heartstopper
-  date: 2024-10
-  seasons: [3]
-  tags: ["queer"]
-
-- url: https://www.themoviedb.org/tv/138501-agatha-all-along
-  date: 2024-10
-  seasons: [1]
-  status: unfinished
-  tags: ["queer"]
-
 - url: https://www.themoviedb.org/tv/99988-krasnaya-koroleva
+  name: "The Red Queen"
   date: 2024-12
   seasons: [1]
-  status: unfinished
   tags: ["russisch"]
-
-- url: https://www.themoviedb.org/tv/131488-the-empress
-  date: 2024-11
-  seasons: [1]
   status: unfinished
-  tags: ["deutsch"]
 
 - url: https://www.themoviedb.org/tv/88512-bonding
+  name: "Bonding"
   date: 2024-12
   seasons: [1]
   tags: []
 
 - url: https://www.themoviedb.org/tv/79063-cunk-on
+  name: "Cunk on..."
   date: 2024-12
   seasons: [2]
   tags: []
+
+- url: https://www.themoviedb.org/tv/131488-the-empress
+  name: "The Empress"
+  date: 2024-11
+  seasons: [1]
+  tags: ["deutsch"]
+  status: unfinished
+
+- url: https://www.themoviedb.org/tv/124834-heartstopper
+  name: "Heartstopper"
+  date: 2024-10
+  seasons: [3]
+  tags: ["queer"]
+
+- url: https://www.themoviedb.org/tv/138501-agatha-all-along
+  name: "Agatha All Along"
+  date: 2024-10
+  seasons: [1]
+  tags: ["queer"]
+  status: unfinished
+
+- url: https://www.themoviedb.org/tv/124834-heartstopper
+  name: "Heartstopper"
+  date: 2024-09
+  seasons: [1, 2]
+  tags: ["queer"]
+
+- url: https://www.themoviedb.org/tv/1457/
+  name: "Pride and Prejudice"
+  date: 2024-01
+  seasons: [1]
+  tags: ["w/ alena ❤️"]

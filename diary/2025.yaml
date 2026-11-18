@@ -19,7 +19,8 @@
   tags: ["queer"]
 
 - url: https://www.themoviedb.org/tv/1418-the-big-bang-theory
+  name: "The Big Bang Theory"
   date: 2025-02
   seasons: [1]
-  status: unfinished
   tags: []
+  status: unfinished

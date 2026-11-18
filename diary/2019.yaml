@@ -1,6 +1,7 @@
 # One entry per viewing. Names are filled in by GitHub Actions.
 
 - url: https://www.themoviedb.org/tv/66788-13-reasons-why
+  name: "13 Reasons Why"
   date: 2019-06
   seasons: [1]
   tags: []
