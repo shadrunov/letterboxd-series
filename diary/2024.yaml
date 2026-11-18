@@ -45,8 +45,7 @@
   seasons: [1, 2]
   tags: ["queer"]
 
-- url: https://www.themoviedb.org/tv/1457/
-  name: "Pride and Prejudice"
+- url: https://www.themoviedb.org/tv/64099-war-and-peace
   date: 2024-03
   seasons: [1]
   tags: []
