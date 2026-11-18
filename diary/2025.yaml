@@ -30,3 +30,9 @@
   date: 2025-01
   seasons: [1]
   tags: []
+
+- url: https://www.themoviedb.org/tv/125910
+  name: "Young Royals"
+  date: 2025-01
+  seasons: [1, 2, 3]
+  tags: ["w/ alena ❤️", "queer"]
