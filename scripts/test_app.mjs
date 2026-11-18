@@ -203,3 +203,21 @@ console.log('Passed app checks: year groups, compact views, unique/viewing/rewat
 
 assert.ok(!run('cardHTML(state.entries[0], true)').includes('entry-tags'));
 assert.ok(run('cardHTML(state.entries[0], false)').includes('entry-tags'));
+
+const heartstopperDiary = await createHarness('', {data:{years:['2024','2026'], entries:[
+  seasonRecord('heartstopper-2026','2026-07',[3],['w/ andrei'],{title:'Heartstopper',watch:'rewatch'}),
+  seasonRecord('heartstopper-s3','2024-10',[3],['queer'],{title:'Heartstopper'}),
+  seasonRecord('heartstopper-s12','2024-09',[1,2],['queer'],{title:'Heartstopper'}),
+]}});
+assert.equal(heartstopperDiary.run('state.displayEntries.length'), 2);
+assert.equal(heartstopperDiary.run("state.displayEntries.find(e=>e.watch==='watch').watched"), '2024-10');
+assert.deepEqual(Array.from(heartstopperDiary.run("state.displayEntries.find(e=>e.watch==='watch').seasons")), [1,2,3]);
+assert.deepEqual(Array.from(heartstopperDiary.run("state.displayEntries.find(e=>e.watch==='rewatch').seasons")), [3]);
+const splitRecordDiary = await createHarness('', {data:{years:['2026'],entries:[
+  seasonRecord('source-watch','2026-07',[2],[],{sourceId:'one-yaml-record'}),
+  seasonRecord('source-rewatch','2026-07',[1],[],{sourceId:'one-yaml-record',watch:'rewatch'}),
+]}});
+assert.equal(splitRecordDiary.get('#total-viewings').textContent, 1);
+assert.equal(splitRecordDiary.run('countThisYear(state.entries, 2026)'), 1);
+assert.equal(splitRecordDiary.get('#total-rewatches').textContent, 1);
+assert.equal(splitRecordDiary.run('watchedEntries(state.entries)[0].viewingCount'), 1);

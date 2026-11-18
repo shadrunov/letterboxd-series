@@ -5,6 +5,7 @@ import json
 import re
 import shutil
 from tmdb import parse_reference
+from viewings import classify_rewatches
 from continuations import continuation_rules, combine_continuations
 from diary import diary_files, read_document, parse_seasons
 from pathlib import Path
@@ -45,7 +46,7 @@ def load_diary(root=ROOT):
     if not files:
         raise ValueError('No yearly YAML diary files found')
     entries = [entry for path in files for entry in parse_year(path, tmdb_cache)]
-    return dict(years=[p.stem for p in files], entries=entries)
+    return dict(years=[p.stem for p in files], entries=classify_rewatches(entries))
 
 
 def render_index(source, diary, script, stylesheet, favicon=None):

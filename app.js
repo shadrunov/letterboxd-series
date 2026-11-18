@@ -72,6 +72,9 @@ function sortEntries(entries) {
     return $('#sort').value === 'oldest' ? dateKey(a).localeCompare(dateKey(b)) : dateKey(b).localeCompare(dateKey(a));
   });
 }
+function sourceRecordCount(entries) {
+  return new Set(entries.map(entry => entry.sourceId || entry.id)).size;
+}
 function watchedEntries(entries) {
   const groups = new Map();
   for (const entry of entries) {
@@ -81,7 +84,7 @@ function watchedEntries(entries) {
   }
   return sortEntries([...groups.values()].map(group => {
     const latest = latestEntry(group);
-    return {...latest, seasons:[...new Set(group.flatMap(entry => entry.seasons))].sort((a,b) => a-b), allSeasons:group.some(entry => entry.allSeasons), tags:[...new Set(group.flatMap(entry => entry.tags))], viewingCount:group.length};
+    return {...latest, seasons:[...new Set(group.flatMap(entry => entry.seasons))].sort((a,b) => a-b), allSeasons:group.some(entry => entry.allSeasons), tags:[...new Set(group.flatMap(entry => entry.tags))], viewingCount:sourceRecordCount(group)};
   }));
 }
 function renderTags() {
@@ -238,7 +241,7 @@ $('#reset').addEventListener('click',() => { $('#search').value = ''; ['year','s
 $('.close-dialog').addEventListener('click',() => $('#detail').close());
 $('#detail').addEventListener('click',event => { if (event.target === $('#detail')) { const r = $('#detail').getBoundingClientRect(); if (event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom) $('#detail').close(); } });
 function countThisYear(entries, year) {
-  return entries.filter(entry => entry.watched.slice(0,4) === String(year)).length;
+  return sourceRecordCount(entries.filter(entry => entry.watched.slice(0,4) === String(year)));
 }
 async function init() {
   try {
@@ -255,8 +258,8 @@ async function init() {
     state.years = diary.years.sort().reverse();
     state.years.forEach(year => { const option = document.createElement('option'); option.value = year; option.textContent = year; $('#year').append(option); });
     $('#total-series').textContent = new Set(state.entries.map(entry => entry.showId)).size;
-    $('#total-viewings').textContent = state.entries.length;
-    $('#total-rewatches').textContent = state.entries.filter(entry => entry.watch === 'rewatch').length;
+    $('#total-viewings').textContent = sourceRecordCount(state.entries);
+    $('#total-rewatches').textContent = sourceRecordCount(state.entries.filter(entry => entry.watch === 'rewatch'));
     const year = new Date().getFullYear();
     $('#total-this-year').textContent = countThisYear(state.entries, year);
     $('#this-year-stat').title = `Diary entries logged in ${year}`;
