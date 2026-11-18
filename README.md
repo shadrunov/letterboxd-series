@@ -42,11 +42,15 @@ Each year has its own YAML file. Add `diary/2024.yaml` with the same list format
 
 Full dates are preserved in YAML, while the public diary displays only their month. Unknown months can be recorded as a year alone. YAML duplicate keys, misplaced years, invalid dates, unknown fields, and invalid season ranges fail validation before anything is published.
 
-One list element is one viewing. The build reads all years chronologically and automatically identifies seasons already completed in an earlier entry as rewatches. For example, watching S1–S3 in 2024 and S3 again in 2026 produces a 2024 diary entry and a separate 2026 S3 rewatch.
+A YAML row logs seasons within a viewing. Several rows can belong to one viewing, allowing different tags for different seasons.
 
-A record with both new and repeated seasons is split for display, with the same tags, date, notes, and YAML edit link. Profile counters still count its original YAML record once. An unfinished first attempt does not count as a completed earlier watch.
+The build reads dates from oldest to newest. **For the same month/date, top-to-bottom YAML order defines the sequence. Append later records below earlier ones.** The formatter preserves this order when dates are equal.
 
-You can also specify `rewatch: true`, including when the first watch is missing from the diary. This works in the same year, month, or a different year:
+New seasons extend the current viewing. Repeating a season already completed in that viewing starts the next viewing, and later season rows extend that new viewing. For example, S1 followed by S2–S3 counts as one viewing. A later S1 row starts viewing two, and a later S2–S3 row joins viewing two. This also works across years. A mixed row containing new and repeated seasons starts one new viewing.
+
+Profile ENTRIES, THIS YEAR, REWATCHES, and the Watched card's viewing count use these viewing groups. Each group's date is its latest record date. The season-eye counter counts distinct completed viewings for that season. An unfinished attempt followed by completion stays in one viewing.
+
+You can use the existing `rewatch: true` to explicitly start a new viewing, including when its earlier viewing is absent from the diary:
 
 ```yaml
 - url: https://www.themoviedb.org/tv/125910
@@ -81,11 +85,11 @@ Use separate YAML records for the same TMDB URL. For example:
 
 Place each record in its corresponding year file. These are examples, not actual viewing records. A record listing several seasons gives its tags to all those seasons; split it into separate records when their tags differ.
 
-**Diary combines regular-watch records of the same series into one entry**, across years. It shows the union of seasons and tags, dated by the latest `date` field (full dates are used for ordering even though only the month is displayed). The example above appears once in February 2026 with S1, S2, S3 and all three tags. Entering an older date later does not move the merged entry forward.
+**Diary combines season records belonging to the same viewing into one entry**, across years. It shows the union of seasons and tags, dated by the latest `date` field (full dates are used for ordering even though only the month is displayed). The example above appears once in February 2026 with S1, S2, S3 and all three tags. Entering an older date later does not move the merged entry forward.
 
-Automatically detected rewatches and records with `rewatch: true` remain separate dated entries. Source YAML is never merged or rewritten by this display feature. Profile ENTRIES/THIS YEAR counters still count source records. The green-eye season counters also use source records, so grouping does not create extra watches. A merged entry is marked unfinished if any source record is still unfinished; update that record when you finish it.
+Each rewatch is a separate diary entry. Its consecutive season rows are combined in the same way as the first viewing. Source YAML keeps all season-specific dates, tags, and notes. Viewing history lists other viewing groups and excludes the group currently open. Season tags in the detail panel belong to the open viewing. A viewing is unfinished until all its logged seasons have a completed record.
 
-Diary filters run **after** grouping: tags from different seasons can match together, and the year filter uses the merged entry’s latest date. A year whose records all moved into a later merged entry does not display a misleading empty-year section. The merged row’s pencil opens the latest record; its details show all original records, tags, notes, and their own GitHub edit links. Individual seasons also display their corresponding tags.
+Diary filters run **after** grouping: tags from different seasons can match together, and the year filter uses the merged entry’s latest date. A year whose records all moved into a later merged entry does not display a misleading empty-year section. The merged row’s pencil opens its latest record. Its details combine the viewing’s notes and show other viewings with their GitHub edit links. Individual seasons also display their corresponding tags.
 
 ## Browse
 

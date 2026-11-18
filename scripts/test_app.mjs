@@ -131,7 +131,7 @@ assert.equal(run("seasonWatchCount(state.entries[1], {number:4,airDate:'2027-01-
 assert.equal(run('watchedEye(0)'), '');
 assert.ok(!run('watchedEye(1)').includes('season-watch-count'));
 // A completed full-series rewatch counts existing seasons, never later releases.
-run("state.entries.push({id:'all-fixture',showId:'royals',status:'watched',seasons:[],allSeasons:true,watched:'2026-02'})");
+run("state.entries.push({id:'all-fixture',showId:'royals',watch:'rewatch',status:'watched',seasons:[],allSeasons:true,watched:'2026-02'})");
 assert.equal(run("seasonWatchCount(state.entries[1], {number:3,airDate:'2024-03-11'})"), 3);
 assert.equal(run("seasonWatchCount(state.entries[1], {number:4,airDate:'2027-01-01'})"), 0);
 assert.equal(run("seasonWatchCount(state.entries[1], {number:0,airDate:'2022-01-01'})"), 0);
@@ -174,7 +174,7 @@ const seasonFixture = {years:['2024','2025','2026'], entries:[
 ]};
 const combined = await createHarness('', {data:seasonFixture});
 assert.equal(combined.run('matchingEntries().length'), 2);
-assert.equal(combined.get('#total-viewings').textContent, 4);
+assert.equal(combined.get('#total-viewings').textContent, 2);
 let combinedHTML = combined.get('#entries').innerHTML;
 assert.ok(combinedHTML.includes('class="tags-heading">Tags</th><th scope="col">Released'));
 assert.ok(combinedHTML.includes('S1 · S2 · S3'));
@@ -221,3 +221,28 @@ assert.equal(splitRecordDiary.get('#total-viewings').textContent, 1);
 assert.equal(splitRecordDiary.run('countThisYear(state.entries, 2026)'), 1);
 assert.equal(splitRecordDiary.get('#total-rewatches').textContent, 1);
 assert.equal(splitRecordDiary.run('watchedEntries(state.entries)[0].viewingCount'), 1);
+
+const roundData = {years:['2026'],entries:[
+  seasonRecord('round1-s1','2026-11',[1],['in dublin'],{viewingId:'royals:1',viewingNumber:1,viewingStatus:'watched'}),
+  seasonRecord('round1-s23','2026-11',[2,3],['queer'],{viewingId:'royals:1',viewingNumber:1,viewingStatus:'watched'}),
+]};
+const oneRound = await createHarness('', {data:roundData});
+assert.equal(oneRound.get('#total-viewings').textContent, 1);
+assert.equal(oneRound.run('watchedEntries(state.entries)[0].viewingCount'), 1);
+oneRound.run("openDetail('round1-s23')");
+assert.ok(!oneRound.get('#detail-content').innerHTML.includes('Viewing history'));
+assert.equal(oneRound.run("seasonTags(state.displayEntries[0], {number:1}).join(',')"), 'in dublin');
+roundData.entries.push(
+  seasonRecord('round2-s1','2026-11',[1],['again'],{watch:'rewatch',viewingId:'royals:2',viewingNumber:2,viewingStatus:'watched'}),
+  seasonRecord('round2-s23','2026-11',[2,3],['again'],{watch:'rewatch',viewingId:'royals:2',viewingNumber:2,viewingStatus:'watched'}),
+);
+const twoRounds = await createHarness('', {data:roundData});
+assert.equal(twoRounds.get('#total-viewings').textContent, 2);
+assert.equal(twoRounds.get('#total-rewatches').textContent, 1);
+assert.equal(twoRounds.run('state.displayEntries.length'), 2);
+assert.equal(twoRounds.run('sortEntries([...state.displayEntries])[0].viewingNumber'), 2);
+assert.equal(twoRounds.run('watchedEntries(state.entries)[0].viewingCount'), 2);
+twoRounds.run("openDetail('round2-s23')");
+assert.equal((twoRounds.get('#detail-content').innerHTML.match(/class="history-entry"/g) || []).length, 1);
+assert.equal(twoRounds.run("seasonWatchCount(state.entries[0], {number:1})"), 2);
+assert.equal(twoRounds.run('countThisYear(state.entries,2026)'), 2);

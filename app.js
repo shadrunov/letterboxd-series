@@ -34,26 +34,27 @@ const dateKey = entry => entry.watchDate || entry.watched;
 function latestEntry(entries) {
   return entries.reduce((latest,entry) => dateKey(entry) >= dateKey(latest) ? entry : latest);
 }
+function viewingKey(entry) {
+  return entry.viewingId || entry.sourceId || (entry.watch === 'rewatch' ? entry.id : entry.showId);
+}
 function mergeDiaryEntries(entries) {
   const groups = new Map();
-  const result = [];
   for (const entry of entries) {
-    if (entry.watch === 'rewatch') { result.push(entry); continue; }
-    if (!groups.has(entry.showId)) groups.set(entry.showId, []);
-    groups.get(entry.showId).push(entry);
+    const key = viewingKey(entry);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(entry);
   }
-  for (const group of groups.values()) {
+  return [...groups.values()].map(group => {
     const latest = latestEntry(group);
-    result.push({...latest,
+    return {...latest,
       seasons:[...new Set(group.flatMap(entry => entry.seasons))].sort((a,b) => a-b),
       allSeasons:group.some(entry => entry.allSeasons),
       tags:[...new Set(group.flatMap(entry => entry.tags))],
-      status:group.every(entry => entry.status === 'watched') ? 'watched' : 'unfinished',
+      notes:[...new Set(group.map(entry => entry.notes).filter(Boolean))].join('\n\n'),
+      status:latest.viewingStatus || (group.every(entry => entry.status === 'watched') ? 'watched' : 'unfinished'),
       sourceEntries:group,
-      recordCount:group.length,
-    });
-  }
-  return result;
+    };
+  });
 }
 function matchingEntries() {
   const query = $('#search').value.trim().toLocaleLowerCase();
@@ -69,11 +70,14 @@ function sortEntries(entries) {
   return entries.sort((a,b) => {
     if ($('#sort').value === 'title') return a.title.localeCompare(b.title) || dateKey(b).localeCompare(dateKey(a));
     if (a.watched.slice(0,4) === b.watched.slice(0,4) && a.watched.length !== b.watched.length) return b.watched.length - a.watched.length;
-    return $('#sort').value === 'oldest' ? dateKey(a).localeCompare(dateKey(b)) : dateKey(b).localeCompare(dateKey(a));
+    const order = $('#sort').value === 'oldest' ? 1 : -1;
+    const dateOrder = dateKey(a).localeCompare(dateKey(b));
+    const roundOrder = a.showId === b.showId ? (a.viewingNumber || 0) - (b.viewingNumber || 0) : 0;
+    return order * (dateOrder || roundOrder);
   });
 }
-function sourceRecordCount(entries) {
-  return new Set(entries.map(entry => entry.sourceId || entry.id)).size;
+function viewingCount(entries) {
+  return new Set(entries.map(viewingKey)).size;
 }
 function watchedEntries(entries) {
   const groups = new Map();
@@ -84,11 +88,11 @@ function watchedEntries(entries) {
   }
   return sortEntries([...groups.values()].map(group => {
     const latest = latestEntry(group);
-    return {...latest, seasons:[...new Set(group.flatMap(entry => entry.seasons))].sort((a,b) => a-b), allSeasons:group.some(entry => entry.allSeasons), tags:[...new Set(group.flatMap(entry => entry.tags))], viewingCount:sourceRecordCount(group)};
+    return {...latest, seasons:[...new Set(group.flatMap(entry => entry.seasons))].sort((a,b) => a-b), allSeasons:group.some(entry => entry.allSeasons), tags:[...new Set(group.flatMap(entry => entry.tags))], sourceEntries:group, viewingCount:viewingCount(group)};
   }));
 }
 function renderTags() {
-  const entries = state.mode === 'watched' ? state.entries.filter(entry => entry.status === 'watched') : mergeDiaryEntries(state.entries);
+  const entries = state.mode === 'watched' ? mergeDiaryEntries(state.entries.filter(entry => entry.status === 'watched')) : mergeDiaryEntries(state.entries);
   const tags = [...new Set(entries.flatMap(entry => entry.tags))].sort((a,b) => a.localeCompare(b));
   $('#tag-filters').innerHTML = `<button class="tag all-tags" type="button" data-clear-tags aria-pressed="${state.tags.size === 0}">All tags</button>` + tags.map(tag => `<button class="tag" type="button" data-tag="${escapeHTML(tag)}" aria-pressed="${state.tags.has(tag)}">${escapeHTML(tag)} <span>${entries.filter(entry => entry.tags.includes(tag)).length}</span></button>`).join('');
   $('#tag-help').hidden = tags.length > 0;
@@ -148,10 +152,12 @@ function viewingIncludesSeason(viewing, season) {
     (viewing.allSeasons && season.number > 0 && season.airDate && season.airDate.slice(0, viewing.watched.length) <= viewing.watched);
 }
 function seasonWatchCount(entry, season) {
-  return state.entries.filter(viewing => viewing.showId === entry.showId && viewing.status === 'watched' && viewingIncludesSeason(viewing, season)).length;
+  return viewingCount(state.entries.filter(viewing => viewing.showId === entry.showId && viewing.status === 'watched' && viewingIncludesSeason(viewing, season)));
 }
 function seasonTags(entry, season) {
-  return [...new Set(state.entries.filter(viewing => viewing.showId === entry.showId && viewingIncludesSeason(viewing, season)).flatMap(viewing => viewing.tags || []))];
+  const records = entry.sourceEntries || state.entries.filter(viewing =>
+    viewing.showId === entry.showId && (!entry.viewingId || viewingKey(viewing) === viewingKey(entry)));
+  return [...new Set(records.filter(viewing => viewingIncludesSeason(viewing, season)).flatMap(viewing => viewing.tags || []))];
 }
 function watchedEye(count) {
   if (!count) return '';
@@ -209,7 +215,7 @@ function seasonsHTML(entry) {
 function openDetail(id) {
   const entry = state.displayEntries.find(entry => entry.id === id) || state.entries.find(entry => entry.id === id);
   if (!entry) return;
-  const history = state.entries.filter(other => other.showId === entry.showId && other.id !== entry.id).sort((a,b) => dateKey(b).localeCompare(dateKey(a)));
+  const history = mergeDiaryEntries(state.entries).filter(other => other.showId === entry.showId && viewingKey(other) !== viewingKey(entry)).sort((a,b) => dateKey(b).localeCompare(dateKey(a)));
   const sourceLinks = [entry.url ? `<a class="detail-link" href="${escapeHTML(entry.url)}" target="_blank" rel="noopener noreferrer">TMDB ↗</a>` : '', entry.letterboxd ? `<a class="detail-link" href="${escapeHTML(entry.letterboxd)}" target="_blank" rel="noopener noreferrer">Letterboxd ↗</a>` : ''].join('');
   $('#detail-content').innerHTML = `<div class="detail-layout"><div class="detail-poster">${posterHTML(entry)}</div><div class="detail-copy"><span class="detail-year">${[entry.year,...(entry.genres || [])].filter(Boolean).map(escapeHTML).join(' · ')}</span><h2>${escapeHTML(entry.title)}</h2><p class="detail-watch">${seasonLabel(entry)} · ${entry.status === 'unfinished' ? 'Unfinished' : 'Watched'}${entry.watch === 'rewatch' ? ' · ↻ Rewatch' : ''}<br>Logged ${escapeHTML(watchLabel(entry))}</p><div class="entry-tags">${tagsHTML(entry)}</div>${entry.notes ? `<p class="detail-note">${escapeHTML(entry.notes)}</p>` : ''}${history.length ? `<div class="other-viewings"><h3>Viewing history</h3>${history.map(other => `<div class="history-entry"><p>${escapeHTML(watchLabel(other))} · ${seasonLabel(other)}${other.watch === 'rewatch' ? ' · ↻ Rewatch' : ''}${other.status === 'unfinished' ? ' · Unfinished' : ''} ${editLink(other)}</p><div class="entry-tags">${tagsHTML(other)}</div>${other.notes ? `<p class="history-note">${escapeHTML(other.notes)}</p>` : ''}</div>`).join('')}</div>` : ''}<p class="detail-summary">${escapeHTML(entry.summary || '')}</p><div class="source-links">${sourceLinks}</div></div></div>${seasonsHTML(entry)}${entry.url ? '<p class="detail-credit">Summary &amp; poster via TMDB.</p>' : ''}`;
   $('#detail').showModal();
@@ -241,7 +247,7 @@ $('#reset').addEventListener('click',() => { $('#search').value = ''; ['year','s
 $('.close-dialog').addEventListener('click',() => $('#detail').close());
 $('#detail').addEventListener('click',event => { if (event.target === $('#detail')) { const r = $('#detail').getBoundingClientRect(); if (event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom) $('#detail').close(); } });
 function countThisYear(entries, year) {
-  return sourceRecordCount(entries.filter(entry => entry.watched.slice(0,4) === String(year)));
+  return mergeDiaryEntries(entries).filter(entry => entry.watched.slice(0,4) === String(year)).length;
 }
 async function init() {
   try {
@@ -258,8 +264,8 @@ async function init() {
     state.years = diary.years.sort().reverse();
     state.years.forEach(year => { const option = document.createElement('option'); option.value = year; option.textContent = year; $('#year').append(option); });
     $('#total-series').textContent = new Set(state.entries.map(entry => entry.showId)).size;
-    $('#total-viewings').textContent = sourceRecordCount(state.entries);
-    $('#total-rewatches').textContent = sourceRecordCount(state.entries.filter(entry => entry.watch === 'rewatch'));
+    $('#total-viewings').textContent = viewingCount(state.entries);
+    $('#total-rewatches').textContent = viewingCount(state.entries.filter(entry => entry.watch === 'rewatch'));
     const year = new Date().getFullYear();
     $('#total-this-year').textContent = countThisYear(state.entries, year);
     $('#this-year-stat').title = `Diary entries logged in ${year}`;

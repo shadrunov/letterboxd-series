@@ -1,4 +1,4 @@
-"""Classify repeated seasons after loading every year's diary records."""
+"""Group season logs into viewing rounds in chronological YAML order."""
 
 
 def seasons_for_viewing(entry):
@@ -15,26 +15,40 @@ def seasons_for_viewing(entry):
     }
 
 
-def classify_rewatches(entries):
-    completed = {}
-    classified = {}
+def group_viewings(entries):
+    rounds = {}
+    assigned = {}
+    # Python's stable sort preserves top-to-bottom YAML order for equal dates.
     for entry in sorted(entries, key=lambda item: item['watchDate']):
         seasons = seasons_for_viewing(entry)
-        previous = completed.setdefault(entry['showId'], set())
-        repeated = seasons & previous
-        records = [entry]
-        if entry['watch'] == 'watch' and repeated:
-            new_seasons = seasons - repeated
-            if new_seasons:
-                records = [
-                    dict(entry, id=entry['id'] + '-watch', sourceId=entry['id'],
-                         seasons=sorted(new_seasons), allSeasons=False),
-                    dict(entry, id=entry['id'] + '-rewatch', sourceId=entry['id'],
-                         seasons=sorted(repeated), allSeasons=False, watch='rewatch'),
-                ]
-            else:
-                records = [dict(entry, watch='rewatch')]
-        classified[entry['id']] = records
+        show_rounds = rounds.setdefault(entry['showId'], [])
+        current = show_rounds[-1] if show_rounds else None
+        if current is None or entry['watch'] == 'rewatch' or seasons & current['completed']:
+            current = {
+                'number': len(show_rounds) + 1,
+                'watch': 'rewatch' if show_rounds or entry['watch'] == 'rewatch' else 'watch',
+                'seasons': set(),
+                'completed': set(),
+                'entries': [],
+            }
+            show_rounds.append(current)
+        current['entries'].append(entry)
+        current['seasons'].update(seasons)
         if entry['status'] == 'watched':
-            previous.update(seasons)
-    return [record for entry in entries for record in classified[entry['id']]]
+            current['completed'].update(seasons)
+        assigned[entry['id']] = current
+
+    result = []
+    for entry in entries:
+        viewing = assigned[entry['id']]
+        complete = viewing['seasons'] <= viewing['completed']
+        if not viewing['seasons']:
+            complete = all(row['status'] == 'watched' for row in viewing['entries'])
+        result.append(dict(
+            entry,
+            viewingId=f'{entry["showId"]}:viewing:{viewing["number"]}',
+            viewingNumber=viewing['number'],
+            viewingStatus='watched' if complete else 'unfinished',
+            watch=viewing['watch'],
+        ))
+    return result
