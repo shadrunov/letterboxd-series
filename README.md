@@ -10,7 +10,7 @@ Edit [`diary/2026.yaml`](diary/2026.yaml) and add a list element:
 - url: https://www.themoviedb.org/tv/124834
   date: 2026-07
   seasons: [3]
-  tags: [queer, in darmstadt]
+  tags: [in darmstadt]
 ```
 
 Commit to `main`. GitHub Actions fetches the TMDB information, fills in `name`, sorts and formats the YAML, commits those changes back, and publishes the site. Afterwards the same entry reads:
@@ -20,7 +20,7 @@ Commit to `main`. GitHub Actions fetches the TMDB information, fills in `name`, 
   name: "Heartstopper"
   date: 2026-07
   seasons: [3]
-  tags: [queer, in darmstadt]
+  tags: [in darmstadt]
 ```
 
 The examples are illustrative; they are not extra diary records. **You only need to enter the URL, date, seasons, and tags.** Names are maintained automatically. Comments and viewing details are preserved. The action sorts entries newest first, keeps the existing order for equal dates, and standardizes field order, two-space indentation, and compact season/tag lists. JSON is generated internally; you never need to edit it.
@@ -35,7 +35,7 @@ Each year has its own YAML file. Add `diary/2024.yaml` with the same list format
 | `name` | Added or updated by the action from TMDB |
 | `date` | `2026-07`, `2026-07-15`, or just `2026`; must match the file’s year |
 | `seasons` | `[1, 2, 3]`, a single number, `"1-3"`, or `all`; omit for movies |
-| `tags` | A list such as `[queer, deutsch, "w/ alena ❤️"]`; defaults to `[]` |
+| `tags` | A list such as `[deutsch]`; defaults to `[]` |
 | `rewatch` | `true` for a repeat viewing; defaults to `false` |
 | `status` | `watched` (default) or `unfinished` |
 | `notes` | Optional personal notes |
@@ -48,7 +48,7 @@ One list element is one viewing. To rewatch selected seasons, add another elemen
 - url: https://www.themoviedb.org/tv/125910
   date: 2026-10
   seasons: [2, 3]
-  tags: [queer]
+  tags: []
   rewatch: true
 ```
 
@@ -62,17 +62,17 @@ Use separate YAML records for the same TMDB URL. For example:
 - url: https://www.themoviedb.org/tv/125910
   date: 2024-06
   seasons: [1]
-  tags: ["w/ alena ❤️"]
+  tags: []
 
 - url: https://www.themoviedb.org/tv/125910
   date: 2025-07
   seasons: [2]
-  tags: [in dublin]
+  tags: []
 
 - url: https://www.themoviedb.org/tv/125910
   date: 2026-02
   seasons: [3]
-  tags: [queer]
+  tags: []
 ```
 
 Place each record in its corresponding year file. These are examples, not actual viewing records. A record listing several seasons gives its tags to all those seasons; split it into separate records when their tags differ.
