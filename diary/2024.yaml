@@ -46,6 +46,7 @@
   tags: ["queer"]
 
 - url: https://www.themoviedb.org/tv/64099-war-and-peace
+  name: "War and Peace"
   date: 2024-03
   seasons: [1]
   tags: []
