@@ -177,20 +177,20 @@ function seasonsHTML(entry) {
     const episodes = Number.isInteger(season.episodeCount)
       ? String(season.episodeCount)
       : '<span title="Episode count unavailable" aria-label="Episode count unavailable">—</span>';
-    const title = season.overview
-      ? `<details class="season-description"><summary title="Season synopsis"><span class="season-title">${name}</span></summary><p>${escapeHTML(season.overview)}</p></details>`
-      : `<span class="season-title">${name}</span>`;
+    const synopsis = season.overview
+      ? `<tr class="season-synopsis-row"><td colspan="6"><details class="season-description"><summary>Season synopsis</summary><p>${escapeHTML(season.overview)}</p></details></td></tr>`
+      : '';
     const link = season.url
       ? `<a href="${escapeHTML(season.url)}" class="season-link" target="_blank" rel="noopener noreferrer" aria-label="${name} on TMDB">TMDB ↗</a>`
       : '';
-    return `<tr>
-      <td class="season-name-cell">${title}</td>
+    return `<tr class="season-main-row${season.overview ? ' has-synopsis' : ''}">
+      <td class="season-name-cell"><span class="season-title">${name}</span></td>
       <td class="season-tags-cell"><div class="entry-tags season-tags">${tagsHTML({tags:seasonTags(entry, season)})}</div></td>
       <td class="season-year-cell">${escapeHTML(year)}</td>
       <td class="season-episodes-cell">${episodes}</td>
       <td class="season-logged-cell">${watchedEye(seasonWatchCount(entry, season))}</td>
       <td class="season-source-cell">${link}</td>
-    </tr>`;
+    </tr>${synopsis}`;
   }).join('');
   const table = seasons.length
     ? `<div class="season-table-wrap"><table class="season-table" aria-labelledby="seasons-heading">

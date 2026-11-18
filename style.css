@@ -603,19 +603,25 @@ footer { color:#678; }
 .season-table th { padding:6px 8px; background:#14181c; border-top:1px solid #456; border-bottom:1px solid #2c3440; color:#678; font-size:10px; line-height:14px; font-weight:400; text-transform:uppercase; text-align:left; }
 .season-table td { padding:14px 8px; height:62px; border-bottom:1px solid #345; vertical-align:middle; color:#9ab; font-size:11px; }
 .season-table th:first-child,.season-table td:first-child { padding-left:0; }
-.season-table th:nth-child(2) { width:116px; text-align:right; }
+.season-table th:nth-child(2) { width:168px; }
 .season-table th:nth-child(3) { width:65px; }
-.season-table th:nth-child(4) { width:64px; }
+.season-table th:nth-child(4) { width:64px; text-align:center; }
 .season-table th:nth-child(5) { width:56px; text-align:center; }
 .season-table th:last-child { width:64px; text-align:right; }
 .season-table .season-title { color:#fff; font:700 16px/20px var(--serif); font-variation-settings:'opsz' 18; }
 .season-table .season-description { margin:0; }
 .season-table .season-description summary { color:#789; }
 .season-table .season-description p { font-weight:400; }
-.season-table .season-tags { margin:0; justify-content:flex-end; }
+.season-table .season-tags { margin:0; flex-wrap:nowrap; justify-content:flex-start; overflow-x:auto; scrollbar-width:thin; }
+.season-table .season-tags .tag { flex-shrink:0; white-space:nowrap; }
+.season-episodes-cell { text-align:center; }
 .season-logged-cell { text-align:center; }
 .season-source-cell { text-align:right; }
 .season-table .season-logged-label { display:none; }
 .season-table .season-eye,.season-table .season-watched svg { width:28px; height:18px; }
 
 .season-table .season-link { white-space:nowrap; }
+
+.season-table .has-synopsis td { height:48px; padding-bottom:0; border-bottom:0; }
+.season-table .season-synopsis-row td { height:auto; padding:6px 0 12px; }
+.season-table .season-synopsis-row .season-description { font-size:11px; line-height:16px; }
