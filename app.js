@@ -171,11 +171,37 @@ function seasonsHTML(entry) {
   if (Number.isInteger(entry.numberOfSeasons)) facts.push(`${entry.numberOfSeasons} ${entry.numberOfSeasons === 1 ? 'season' : 'seasons'}`);
   if (Number.isInteger(entry.numberOfEpisodes)) facts.push(`${entry.numberOfEpisodes} ${entry.numberOfEpisodes === 1 ? 'episode' : 'episodes'}`);
   if (entry.showStatus) facts.push(escapeHTML(entry.showStatus));
-  return `<section class="seasons-section" aria-labelledby="seasons-heading"><div class="seasons-heading"><h3 id="seasons-heading">Seasons</h3><p>${facts.join(' · ')}</p></div>${seasons.length ? `<ol class="season-list">${seasons.map(season => {
+  const rows = seasons.map(season => {
+    const name = escapeHTML(season.name || (season.number === 0 ? 'Specials' : 'Season ' + season.number));
     const year = season.airDate && /^\d{4}-/.test(season.airDate) ? season.airDate.slice(0,4) : 'Release date TBA';
-    const episodes = Number.isInteger(season.episodeCount) ? `${season.episodeCount} ${season.episodeCount === 1 ? 'episode' : 'episodes'}` : 'Episode count unavailable';
-    return `<li><div class="season-heading"><div><h4>${escapeHTML(season.name || (season.number === 0 ? 'Specials' : 'Season ' + season.number))}</h4><p>${escapeHTML(year)} · ${episodes}</p><div class="entry-tags season-tags">${tagsHTML({tags:seasonTags(entry, season)})}</div></div><div class="season-actions">${watchedEye(seasonWatchCount(entry, season))}${season.url ? `<a href="${escapeHTML(season.url)}" class="season-link" target="_blank" rel="noopener noreferrer" aria-label="${escapeHTML(season.name)} on TMDB">TMDB ↗</a>` : ''}</div></div>${season.overview ? `<details class="season-description"><summary>Season synopsis</summary><p>${escapeHTML(season.overview)}</p></details>` : ''}</li>`;
-  }).join('')}</ol>` : '<p class="seasons-unavailable">Season information is not available yet.</p>'}</section>`;
+    const episodes = Number.isInteger(season.episodeCount)
+      ? String(season.episodeCount)
+      : '<span title="Episode count unavailable" aria-label="Episode count unavailable">—</span>';
+    const title = season.overview
+      ? `<details class="season-description"><summary title="Season synopsis"><span class="season-title">${name}</span></summary><p>${escapeHTML(season.overview)}</p></details>`
+      : `<span class="season-title">${name}</span>`;
+    const link = season.url
+      ? `<a href="${escapeHTML(season.url)}" class="season-link" target="_blank" rel="noopener noreferrer" aria-label="${name} on TMDB">TMDB ↗</a>`
+      : '';
+    return `<tr>
+      <td class="season-name-cell">${title}</td>
+      <td class="season-tags-cell"><div class="entry-tags season-tags">${tagsHTML({tags:seasonTags(entry, season)})}</div></td>
+      <td class="season-year-cell">${escapeHTML(year)}</td>
+      <td class="season-episodes-cell">${episodes}</td>
+      <td class="season-logged-cell">${watchedEye(seasonWatchCount(entry, season))}</td>
+      <td class="season-source-cell">${link}</td>
+    </tr>`;
+  }).join('');
+  const table = seasons.length
+    ? `<div class="season-table-wrap"><table class="season-table" aria-labelledby="seasons-heading">
+        <thead><tr><th scope="col">Season</th><th scope="col">Tags</th><th scope="col">Released</th><th scope="col">Episodes</th><th scope="col">Logged</th><th scope="col">TMDB</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>`
+    : '<p class="seasons-unavailable">Season information is not available yet.</p>';
+  return `<section class="seasons-section" aria-labelledby="seasons-heading">
+    <div class="seasons-heading"><h3 id="seasons-heading">Seasons</h3><p>${facts.join(' · ')}</p></div>
+    ${table}
+  </section>`;
 }
 function openDetail(id) {
   const entry = state.displayEntries.find(entry => entry.id === id) || state.entries.find(entry => entry.id === id);
