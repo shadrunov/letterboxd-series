@@ -153,7 +153,16 @@ function seasonTags(entry, season) {
 function watchedEye(count) {
   if (!count) return '';
   const label = count === 1 ? 'Watched once' : `Watched ${count} times`;
-  return `<span class="season-watched" role="img" aria-label="${label}" title="${label}"><svg viewBox="0 0 40 26" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="M1 13Q20-12 39 13Q20 38 1 13ZM20 5a8 8 0 1 0 0 16a8 8 0 1 0 0-16Z"/><circle cx="20" cy="13" r="4.5" fill="currentColor"/></svg>${count > 1 ? `<span class="season-watch-count" aria-hidden="true">${count}</span>` : ''}</span>`;
+  return `<span class="season-watched" role="img" aria-label="${label}" title="${label}">
+    <span class="season-eye">
+      <svg viewBox="0 0 84 50" aria-hidden="true" focusable="false">
+        <path fill="currentColor" fill-rule="evenodd" d="M2 23C13 9 27 0 42 0s29 9 40 23a3 3 0 0 1 0 4C71 41 57 50 42 50S13 41 2 27a3 3 0 0 1 0-4ZM57 25a15 15 0 1 0-30 0 15 15 0 1 0 30 0Z"/>
+        <circle cx="42" cy="25" r="9" fill="currentColor"/>
+      </svg>
+      ${count > 1 ? `<span class="season-watch-count" aria-hidden="true">${count}</span>` : ''}
+    </span>
+    <span class="season-logged-label" aria-hidden="true">Logged</span>
+  </span>`;
 }
 function seasonsHTML(entry) {
   if (entry.mediaType !== 'tv') return '';
